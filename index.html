@@ -5,46 +5,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>AR Laptop</title>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
     <style>
         :root {
-            --bg: #f3f5f7;
+            --bg: #eef1f4;
             --fg: #14202b;
             --muted: #5b6b79;
             --accent: #0a7cff;
             --accent-fg: #fff;
-            --card: #ffffff;
-            --line: #d5dce3;
-            box-sizing: border-box;
-            padding-top: env(safe-area-inset-top, 0px);
-            padding-bottom: env(safe-area-inset-bottom, 0px);
+            --card: #fff;
+            --line: #d5dce3
         }
 
-        @media (prefers-color-scheme: dark) {
-            :root:not([data-theme="light"]) {
+        @media (prefers-color-scheme:dark) {
+            :root {
                 --bg: #0e141b;
                 --fg: #e9eef3;
                 --muted: #93a3b2;
                 --accent: #4da3ff;
                 --accent-fg: #06121f;
                 --card: #16202a;
-                --line: #2a3947;
+                --line: #2a3947
             }
-        }
-
-        :root[data-theme="dark"] {
-            --bg: #0e141b;
-            --fg: #e9eef3;
-            --muted: #93a3b2;
-            --accent: #4da3ff;
-            --accent-fg: #06121f;
-            --card: #16202a;
-            --line: #2a3947;
         }
 
         *,
         *::before,
         *::after {
-            box-sizing: inherit
+            box-sizing: border-box
         }
 
         html,
@@ -53,311 +41,107 @@
             margin: 0
         }
 
-        html {
-            scroll-padding-top: env(safe-area-inset-top, 0px)
-        }
-
         body {
             background: var(--bg);
             color: var(--fg);
-            font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
-            overflow: hidden
-        }
-
-        .screen {
-            height: 100%;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 24px;
-            gap: 18px
+            padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0)
+        }
+
+        header {
+            padding: 18px 20px 6px
         }
 
         h1 {
-            font-size: clamp(2rem, 7vw, 3.2rem);
             margin: 0;
-            letter-spacing: -.02em;
-            line-height: 1.05
+            font-size: clamp(1.5rem, 5vw, 2.2rem);
+            letter-spacing: -.02em
         }
 
-        p {
-            margin: 0;
+        header p {
+            margin: 6px 0 0;
             color: var(--muted);
-            max-width: 36ch;
+            line-height: 1.5;
+            max-width: 52ch;
+            font-size: .95rem
+        }
+
+        model-viewer {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            --poster-color: transparent;
+            background: transparent
+        }
+
+        .ar-btn {
+            position: absolute;
+            left: 50%;
+            bottom: 22px;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: var(--accent-fg);
+            border: 0;
+            border-radius: 14px;
+            padding: 16px 34px;
+            font: inherit;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, .3)
+        }
+
+        .ar-btn:active {
+            transform: translateX(-50%) scale(.97)
+        }
+
+        .ar-btn:focus-visible {
+            outline: 3px solid var(--fg);
+            outline-offset: 3px
+        }
+
+        .note {
+            margin: 0 16px 14px;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            background: var(--card);
+            border-radius: 12px;
+            color: var(--muted);
+            font-size: .9rem;
             line-height: 1.5
         }
 
-        button {
-            font: inherit;
-            cursor: pointer;
-            border: 0;
-            border-radius: 12px
-        }
-
-        button:focus-visible,
-        input:focus-visible {
-            outline: 3px solid var(--accent);
-            outline-offset: 2px
-        }
-
-        .primary {
-            background: var(--accent);
-            color: var(--accent-fg);
-            font-weight: 600;
-            font-size: 1.1rem;
-            padding: 16px 36px
-        }
-
-        .primary:active {
-            transform: scale(.97)
-        }
-
-        .ghost {
-            background: var(--card);
-            color: var(--fg);
-            border: 1px solid var(--line);
-            padding: 10px 14px;
-            font-size: .9rem
-        }
-
-        .msg {
-            min-height: 1.4em;
-            color: #d93a3a;
-            font-size: .92rem;
-            max-width: 40ch;
-            line-height: 1.45
-        }
-
-        #ar {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            display: none
-        }
-
-        #video {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover
-        }
-
-        #gl {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            touch-action: none
-        }
-
-        .bar {
-            position: absolute;
-            left: 0;
-            right: 0;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: center;
-            padding: 12px;
-            flex-wrap: wrap
-        }
-
-        .top {
-            top: env(safe-area-inset-top, 0px)
-        }
-
-        .bottom {
-            bottom: env(safe-area-inset-bottom, 0px)
-        }
-
-        .bar .ghost {
-            background: rgba(20, 32, 43, .72);
-            color: #fff;
-            border-color: rgba(255, 255, 255, .25);
-            backdrop-filter: blur(6px)
-        }
-
-        .size {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            background: rgba(20, 32, 43, .72);
-            color: #fff;
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: .85rem;
-            backdrop-filter: blur(6px)
-        }
-
-        .size input {
-            width: 140px;
-            accent-color: var(--accent)
-        }
-
-        .hint {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 64px;
-            text-align: center;
-            color: #fff;
-            font-size: .85rem;
-            text-shadow: 0 1px 4px rgba(0, 0, 0, .7);
-            pointer-events: none
+        [hidden] {
+            display: none !important
         }
     </style>
 </head>
 
 <body>
-
-    <section class="screen" id="start">
+    <header>
         <h1>Laptop dalam ruanganmu</h1>
-        <p>Izinkan akses kamera, lalu lihat model laptop 3D melayang di depanmu secara langsung.</p>
-        <button class="primary" id="startBtn">Mulai AR</button>
-        <div class="msg" id="msg" role="alert"></div>
-    </section>
+        <p>Tekan Mulai AR, arahkan kamera ke lantai atau meja, lalu ketuk untuk menaruh laptop. Setelah itu kamu bisa
+            berjalan mengelilinginya.</p>
+    </header>
 
-    <section id="ar" aria-label="Tampilan AR">
-        <video id="video" playsinline muted autoplay></video>
-        <canvas id="gl"></canvas>
-        <div class="bar top">
-            <button class="ghost" id="stopBtn">Berhenti</button>
-            <button class="ghost" id="flipBtn">Ganti kamera</button>
-        </div>
-        <div class="hint">Geser untuk memutar laptop</div>
-        <div class="bar bottom">
-            <label class="size">Ukuran <input type="range" id="scale" min="0.4" max="1.6" step="0.05" value="1"></label>
-        </div>
-    </section>
+    <model-viewer id="mv" src="laptop.glb" alt="Model 3D laptop" ar ar-modes="webxr scene-viewer quick-look"
+        ar-scale="auto" ar-placement="floor" camera-controls auto-rotate touch-action="pan-y" shadow-intensity="1"
+        environment-image="neutral" xr-environment>
+        <button slot="ar-button" class="ar-btn">Mulai AR</button>
+    </model-viewer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <div class="note" id="noAr" hidden>
+        AR tidak tersedia di perangkat atau browser ini. Buka halaman ini di HP: iPhone dengan Safari, atau Android
+        dengan Chrome. Di sini kamu tetap bisa memutar modelnya dengan mouse atau jari.
+    </div>
+
     <script>
-        (function () {
-            var startEl = document.getElementById('start'), arEl = document.getElementById('ar'),
-                video = document.getElementById('video'), canvas = document.getElementById('gl'),
-                msg = document.getElementById('msg'), startBtn = document.getElementById('startBtn');
-            var stream = null, facing = 'environment', three = null;
-
-            function explain(err) {
-                var n = err && err.name;
-                if (!window.isSecureContext) return 'Kamera hanya bisa dipakai lewat HTTPS. Buka halaman ini dengan alamat https://.';
-                if (n === 'NotAllowedError' || n === 'SecurityError') return 'Izin kamera ditolak. Ketuk ikon gembok di address bar, ubah Kamera menjadi Izinkan, lalu tekan Mulai AR lagi. Jika halaman ini tampil di dalam frame, buka tautannya langsung di tab baru.';
-                if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'Kamera tidak ditemukan di perangkat ini.';
-                if (n === 'NotReadableError') return 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi itu lalu coba lagi.';
-                return 'Kamera tidak bisa dibuka. Coba muat ulang halaman.';
-            }
-
-            async function openCamera() {
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw { name: 'SecurityError' };
-                }
-                stopStream();
-                // Memanggil getUserMedia langsung memunculkan prompt izin dari browser / perangkat.
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
-                } catch (e) {
-                    if (e.name === 'OverconstrainedError' || e.name === 'NotFoundError') {
-                        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                    } else throw e;
-                }
-                video.srcObject = stream;
-                await video.play().catch(function () { });
-            }
-
-            function stopStream() {
-                if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
-                video.srcObject = null;
-            }
-
-            startBtn.addEventListener('click', async function () {
-                msg.textContent = ''; startBtn.disabled = true; startBtn.textContent = 'Meminta izin kamera…';
-                try {
-                    await openCamera();
-                    startEl.style.display = 'none'; arEl.style.display = 'block';
-                    if (!three) three = initThree(); else three.resize();
-                    three.start();
-                } catch (e) {
-                    msg.textContent = explain(e);
-                } finally {
-                    startBtn.disabled = false; startBtn.textContent = 'Mulai AR';
-                }
-            });
-
-            document.getElementById('stopBtn').addEventListener('click', function () {
-                stopStream(); if (three) three.stop();
-                arEl.style.display = 'none'; startEl.style.display = 'flex';
-            });
-
-            document.getElementById('flipBtn').addEventListener('click', async function () {
-                facing = facing === 'environment' ? 'user' : 'environment';
-                try { await openCamera(); } catch (e) { msg.textContent = explain(e); }
-            });
-
-            function initThree() {
-                var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-                renderer.setClearColor(0x000000, 0);
-                var scene = new THREE.Scene();
-                var cam = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-                cam.position.set(0, 2.6, 8.5); cam.lookAt(0, 0.9, 0);
-                scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-                var sun = new THREE.DirectionalLight(0xffffff, 0.9); sun.position.set(3, 6, 5); scene.add(sun);
-
-                // Laptop dibuat dari bentuk dasar
-                var laptop = new THREE.Group();
-                var body = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.14, 2.1), new THREE.MeshStandardMaterial({ color: 0xb9c0c8, metalness: .6, roughness: .35 }));
-                laptop.add(body);
-                var keys = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.0), new THREE.MeshStandardMaterial({ color: 0x1b2128, roughness: .8 }));
-                keys.rotation.x = -Math.PI / 2; keys.position.set(0, 0.075, -0.3); laptop.add(keys);
-                var pad = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.6), new THREE.MeshStandardMaterial({ color: 0x9aa2ab, roughness: .5 }));
-                pad.rotation.x = -Math.PI / 2; pad.position.set(0, 0.075, 0.6); laptop.add(pad);
-
-                var hinge = new THREE.Group(); hinge.position.set(0, 0.07, -1.05); hinge.rotation.x = -0.22; laptop.add(hinge);
-                var lid = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.1, 0.1), new THREE.MeshStandardMaterial({ color: 0xaab2ba, metalness: .6, roughness: .35 }));
-                lid.position.set(0, 1.05, 0); hinge.add(lid);
-
-                var c = document.createElement('canvas'); c.width = 512; c.height = 320; var g = c.getContext('2d');
-                var gr = g.createLinearGradient(0, 0, 512, 320); gr.addColorStop(0, '#0a7cff'); gr.addColorStop(1, '#7a3cff');
-                g.fillStyle = gr; g.fillRect(0, 0, 512, 320);
-                g.fillStyle = 'rgba(255,255,255,.92)'; g.font = '700 64px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-                g.fillText('AR Laptop', 256, 160);
-                var tex = new THREE.CanvasTexture(c);
-                var screen = new THREE.Mesh(new THREE.PlaneGeometry(2.95, 1.88), new THREE.MeshBasicMaterial({ map: tex }));
-                screen.position.set(0, 1.05, 0.055); hinge.add(screen);
-
-                laptop.position.y = 0.3; laptop.rotation.y = -0.5;
-                scene.add(laptop);
-
-                var running = false, drag = false, lx = 0, auto = true, s = 1, raf = 0;
-                canvas.addEventListener('pointerdown', function (e) { drag = true; auto = false; lx = e.clientX; canvas.setPointerCapture(e.pointerId); });
-                canvas.addEventListener('pointermove', function (e) { if (!drag) return; laptop.rotation.y += (e.clientX - lx) * 0.01; lx = e.clientX; });
-                canvas.addEventListener('pointerup', function () { drag = false; });
-                canvas.addEventListener('pointercancel', function () { drag = false; });
-                document.getElementById('scale').addEventListener('input', function (e) { s = parseFloat(e.target.value); laptop.scale.setScalar(s); });
-
-                function resize() {
-                    var w = canvas.clientWidth || window.innerWidth, h = canvas.clientHeight || window.innerHeight;
-                    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-                    renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
-                }
-                window.addEventListener('resize', resize);
-
-                function loop(t) {
-                    if (!running) return;
-                    if (auto) laptop.rotation.y += 0.006;
-                    laptop.position.y = 0.3 + Math.sin(t / 700) * 0.08;
-                    renderer.render(scene, cam);
-                    raf = requestAnimationFrame(loop);
-                }
-                return {
-                    resize: resize,
-                    start: function () { running = true; resize(); raf = requestAnimationFrame(loop); },
-                    stop: function () { running = false; cancelAnimationFrame(raf); }
-                };
-            }
-        })();
+        var mv = document.getElementById('mv'), noAr = document.getElementById('noAr');
+        mv.addEventListener('load', function () { noAr.hidden = !!mv.canActivateAR; });
+        // Hentikan putar otomatis saat sesi AR berjalan
+        mv.addEventListener('ar-status', function (e) { if (e.detail.status === 'session-started') mv.removeAttribute('auto-rotate'); });
     </script>
 </body>
 
