@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Karakter 1 - Kartu AR Interaktif</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Orbitron:wght@600;800;900&family=Nunito:wght@700;800;900&display=swap"
+        rel="stylesheet">
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+
+    <style>
+        :root {
+            --card-ratio-w: 595;
+            --card-ratio-h: 882;
+            --card-aspect-ratio: 595 / 882;
+            --card-max-width: 430px;
+
+            --circle-top: 39.34%;
+            --circle-left: 50%;
+            --circle-size: 68%;
+
+            --box-top: 65.8%;
+            --box-left: 50%;
+            --box-width: 77%;
+            --box-height: 25.8%;
+
+            --neon-blue: #00f0ff;
+            --neon-blue-glow: rgba(0, 240, 255, 0.6);
+            --neon-blue-dark: #007a99;
+            --neon-black-bg: #070b14;
+            --neon-black-border: #00f0ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Fredoka', 'Nunito', sans-serif;
+            background-color: #faf8f5;
+            background-image:
+                radial-gradient(circle at 20px 20px, rgba(239, 68, 68, 0.06) 2.5px, transparent 0),
+                radial-gradient(circle at 60px 60px, rgba(245, 158, 11, 0.09) 3.5px, transparent 0);
+            background-size: 70px 70px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            position: relative;
+        }
+
+        .floating-back {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            background: #ffffff;
+            color: #dc2626;
+            border: 2px solid #ef4444;
+            border-radius: 50px;
+            padding: 8px 16px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.15);
+            transition: all 0.2s ease;
+            z-index: 99;
+        }
+
+        .floating-back:hover {
+            background: #ef4444;
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+
+        .card-container {
+            width: 100%;
+            max-width: var(--card-max-width);
+            aspect-ratio: var(--card-aspect-ratio);
+            background-image: url('assets/card.png');
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 100% 100%;
+            background-color: #ffffff;
+            position: relative;
+            border-radius: 26px;
+            overflow: hidden;
+            box-shadow:
+                0 22px 45px rgba(0, 0, 0, 0.14),
+                0 6px 14px rgba(220, 38, 38, 0.08),
+                0 0 0 5px #ffffff,
+                0 0 0 8px rgba(245, 158, 11, 0.35);
+        }
+
+        .pokeball-center {
+            position: absolute;
+            top: var(--circle-top);
+            left: var(--circle-left);
+            width: var(--circle-size);
+            aspect-ratio: 1 / 1;
+            transform: translate(-50%, -50%);
+            background-image: url('assets/pokeball.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            z-index: 2;
+            pointer-events: none;
+            filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.25));
+            animation: bouncePulse 2.4s infinite ease-in-out;
+        }
+
+        .pokeball-glow {
+            position: absolute;
+            top: var(--circle-top);
+            left: var(--circle-left);
+            width: calc(var(--circle-size) * 1.05);
+            aspect-ratio: 1 / 1;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(254, 240, 138, 0.8) 0%, rgba(245, 158, 11, 0.3) 50%, transparent 70%);
+            z-index: 1;
+            pointer-events: none;
+            animation: glowAnim 2s infinite alternate ease-in-out;
+        }
+
+        .ar-circle-trigger {
+            position: absolute;
+            top: var(--circle-top);
+            left: var(--circle-left);
+            width: var(--circle-size);
+            aspect-ratio: 1 / 1;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 3;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #ffffff 40%, rgba(0, 240, 255, 0.6) 80%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+            transition: opacity 0.35s ease;
+        }
+
+        /* PERBAIKAN: jangan pakai display:none, supaya model tetap dimuat
+           dan canActivateAR bisa bernilai true di HP */
+        model-viewer {
+            position: absolute;
+            top: var(--circle-top);
+            left: var(--circle-left);
+            width: calc(var(--circle-size) * 1.08);
+            aspect-ratio: 1 / 1;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 4;
+            background-color: transparent;
+            outline: none;
+            transition: opacity 0.3s ease;
+            --poster-color: transparent;
+        }
+
+        model-viewer.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .card-bottom-box {
+            position: absolute;
+            top: var(--box-top);
+            left: var(--box-left);
+            width: var(--box-width);
+            height: var(--box-height);
+            transform: translateX(-50%);
+            background: rgba(7, 11, 20, 0.45);
+            backdrop-filter: blur(2px);
+            border-radius: 12px;
+            padding: 8px 12px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            z-index: 5;
+            color: #ffffff;
+            box-shadow: inset 0 0 12px rgba(0, 240, 255, 0.15);
+        }
+
+        .char-title {
+            font-family: 'Orbitron', 'Fredoka', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #ffffff;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6);
+            margin-top: 2px;
+        }
+
+        .char-stats {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 2px 0;
+        }
+
+        .stat-pill {
+            background: rgba(0, 240, 255, 0.12);
+            border: 1px solid rgba(0, 240, 255, 0.5);
+            color: var(--neon-blue);
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-shadow: 0 0 4px rgba(0, 240, 255, 0.5);
+        }
+
+        .char-desc {
+            font-size: 0.72rem;
+            line-height: 1.25;
+            color: #d1d5db;
+            font-weight: 600;
+            margin: 2px 0 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .btn-neon-3d {
+            width: 100%;
+            padding: 9px 14px;
+            background: var(--neon-black-bg);
+            border: 2px solid var(--neon-blue);
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            outline: none;
+            box-shadow:
+                0 4px 0 var(--neon-blue-dark),
+                0 0 15px var(--neon-blue-glow),
+                inset 0 0 8px rgba(0, 240, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s ease-in-out;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-neon-3d .btn-text {
+            font-family: 'Orbitron', 'Fredoka', sans-serif;
+            color: var(--neon-blue);
+            font-weight: 800;
+            font-size: 0.86rem;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 6px var(--neon-blue), 0 0 14px var(--neon-blue-glow);
+        }
+
+        .btn-neon-3d .btn-icon {
+            font-size: 1rem;
+            filter: drop-shadow(0 0 6px var(--neon-blue));
+            animation: pulseIcon 1.5s infinite alternate;
+        }
+
+        .btn-neon-3d:hover {
+            background: #0b1120;
+            box-shadow:
+                0 5px 0 var(--neon-blue-dark),
+                0 0 24px rgba(0, 240, 255, 0.85),
+                inset 0 0 14px rgba(0, 240, 255, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-neon-3d:active {
+            transform: translateY(3px);
+            box-shadow:
+                0 1px 0 var(--neon-blue-dark),
+                0 0 10px var(--neon-blue-glow),
+                inset 0 0 10px rgba(0, 240, 255, 0.4);
+        }
+
+        @keyframes bouncePulse {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+        }
+
+        @keyframes glowAnim {
+            0% {
+                opacity: 0.4;
+                transform: translate(-50%, -50%) scale(0.96);
+            }
+
+            100% {
+                opacity: 0.85;
+                transform: translate(-50%, -50%) scale(1.06);
+            }
+        }
+
+        @keyframes pulseIcon {
+            0% {
+                transform: scale(0.95);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.15);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .char-title {
+                font-size: 0.95rem;
+            }
+
+            .char-desc {
+                font-size: 0.68rem;
+            }
+
+            .btn-neon-3d .btn-text {
+                font-size: 0.78rem;
+            }
+
+            .btn-neon-3d {
+                padding: 7px 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card-container" id="cardBg">
+
+        <div class="flash" id="flashEffect"></div>
+        <div class="pokeball-glow" id="pokeGlow"></div>
+        <div class="pokeball-center" id="pokeCenter"></div>
+
+        <button class="ar-circle-trigger" onclick="toggleAR()" aria-label="Buka AR Karakter"></button>
+
+        <!-- 3D Model Viewer AR
+             Jika sudah punya file .usdz, tambahkan atribut: ios-src="assets/1/1.usdz" setelah baris src -->
+        <model-viewer id="viewer" src="assets/2/2.png" ar ar-modes="webxr scene-viewer quick-look" ar-scale="auto"
+            loading="eager" reveal="auto" camera-controls auto-rotate rotation-per-second="30deg" shadow-intensity="1"
+            alt="Model 3D Karakter 1">
+        </model-viewer>
+
+        <div class="card-bottom-box">
+
+            <h2 class="char-title">KARAKTER 1</h2>
+
+            <div class="char-stats">
+                <span class="stat-pill">⚡ Listrik</span>
+                <span class="stat-pill">⭐ Bintang 5</span>
+                <span class="stat-pill">ATK 95</span>
+            </div>
+
+            <p class="char-desc">
+                Karakter legendaris berelemen petir. Ketuk tombol di bawah untuk memunculkan model 3D & Augmented
+                Reality!
+            </p>
+
+        </div>
+
+    </div>
+
+    <script>
+        let isWeb3DActive = false;
+
+        function toggleAR() {
+            const viewer = document.getElementById('viewer');
+            const pokeCenter = document.getElementById('pokeCenter');
+            const pokeGlow = document.getElementById('pokeGlow');
+            const flash = document.getElementById('flashEffect');
+            const neonText = document.getElementById('neonText');
+            const neonIcon = document.getElementById('neonIcon');
+
+            // 1. HP yang mendukung AR (iPhone Quick Look / Android Scene Viewer / WebXR):
+            //    harus dipanggil langsung dari tap, TANPA setTimeout, supaya iOS mengizinkan.
+            if (viewer.canActivateAR) {
+                viewer.activateAR();
+                return;
+            }
+
+            // 2. Fallback Desktop / browser tanpa kamera AR: tampilkan model 3D di dalam kartu
+            flash.style.opacity = '1';
+
+            setTimeout(() => {
+                if (!isWeb3DActive) {
+                    pokeCenter.style.display = 'none';
+                    pokeGlow.style.display = 'none';
+                    viewer.classList.add('show');
+
+                    neonText.innerText = 'TUTUP 3D';
+                    neonIcon.innerText = '🔄';
+                    isWeb3DActive = true;
+                } else {
+                    viewer.classList.remove('show');
+                    pokeCenter.style.display = 'block';
+                    pokeGlow.style.display = 'block';
+
+                    neonText.innerText = 'LIHAT AR 3D';
+                    neonIcon.innerText = '⚡';
+                    isWeb3DActive = false;
+                }
+
+                flash.style.opacity = '0';
+            }, 300);
+        }
+    </script>
+</body>
+
+</html>
