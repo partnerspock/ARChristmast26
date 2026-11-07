@@ -10,12 +10,13 @@
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <style>
+        /* JANGAN kasih background di html/body: video kamera MindAR ada di belakang (z-index negatif) dan akan tertutup */
         html,
         body {
             margin: 0;
             height: 100%;
             overflow: hidden;
-            background: #000;
+            background: transparent;
             font-family: system-ui, sans-serif
         }
 
@@ -42,10 +43,9 @@
 
 <body>
 
-    <p id="hint">Arahkan kamera ke kartu</p>
-
-    <!-- imageTargetSrc = hasil compile gambar kartu ini -->
-    <a-scene mindar-image="imageTargetSrc: targets.mind; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
+    <p id="hint">Membuka kamera...</p>
+    <a-scene
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
         color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
 
@@ -59,14 +59,19 @@
         <a-entity light="type: directional; intensity: 1.5" position="1 2 3"></a-entity>
 
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <!-- rotation: kalau model tergeletak ganti ke "0 0 0"; scale: perbesar/kecilkan; position z: tinggi di atas kartu -->
             <a-gltf-model src="#model" rotation="90 0 0" position="0 0 0" scale="0.5 0.5 0.5"
                 animation-mixer></a-gltf-model>
         </a-entity>
     </a-scene>
 
     <script>
-        const hint = document.getElementById('hint'), t = document.getElementById('target');
+        const hint = document.getElementById('hint'), t = document.getElementById('target'),
+            scene = document.querySelector('a-scene');
+        scene.addEventListener('arReady', () => { hint.textContent = 'Arahkan kamera ke kartu'; });
+        scene.addEventListener('arError', () => {
+            hint.textContent = 'Kamera gagal dibuka. Buka lewat Safari dan izinkan akses kamera.';
+            hint.classList.remove('off');
+        });
         t.addEventListener('targetFound', () => hint.classList.add('off'));
         t.addEventListener('targetLost', () => hint.classList.remove('off'));
     </script>
