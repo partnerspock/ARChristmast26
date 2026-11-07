@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Admin - Christmas 2026</title>
+    <style>
+        :root {
+            --blue: #1a4a9c;
+            --deep: #12336f;
+            --yellow: #ffcb05
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            background: #eef2fb;
+            color: #16264a;
+            -webkit-text-size-adjust: 100%;
+            padding: calc(18px + env(safe-area-inset-top, 0px)) 14px calc(24px + env(safe-area-inset-bottom, 0px))
+        }
+
+        h1 {
+            font-size: 1.35rem;
+            color: var(--blue);
+            margin-bottom: 4px
+        }
+
+        .sub {
+            color: #5a6b92;
+            font-size: .9rem;
+            margin-bottom: 16px
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            /* <- JUMLAH KOLOM (ubah angka 3) */
+            gap: 12px;
+            /* <- JARAK ANTAR KARTU */
+            max-width: 720px;
+            /* <- LEBAR MAKSIMAL SEMUA KARTU (ubah di sini) */
+            margin: 0 auto;
+            /* biar rata tengah di layar lebar */
+        }
+
+        @media (min-width:640px) {
+            .cards {
+                grid-template-columns: repeat(3, 1fr);
+                /* <- JUMLAH KOLOM di laptop */
+                gap: 16px;
+            }
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--blue);
+            border-radius: 16px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .card img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+            background: #dfe7f8;
+            border-radius: 5px;
+        }
+
+        .card b {
+            font-size: 1rem
+        }
+
+        .row {
+            display: flex;
+            gap: 6px
+        }
+
+        .btn {
+            flex: 1;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            text-decoration: none;
+            font: 600 .9rem system-ui;
+            border-radius: 5px;
+            border: 1px solid var(--blue);
+            background: var(--yellow);
+            color: var(--deep);
+            font-size: 11px;
+        }
+
+        .btn.alt {
+            background: #fff;
+            color: var(--blue);
+        }
+    </style>
+</head>
+
+<body>
+    <h1 style="text-align: center; margin-bottom: 20px;">Admin - Christmas 2026</h1>
+    <div class="cards">
+        <div class="card"><img src="char1/char1.png" alt=""><b>Week 1 - Card 1</b>
+            <div class="row"><a class="btn alt" href="char1/char1.html" target="_blank">View</a><a class="btn"
+                    href="char1/qr1.html" target="_blank">Print</a></div>
+        </div>
+        <div class="card"><img src="char2/char2.png" alt=""><b>Week 1 - Card 2</b>
+            <div class="row"><a class="btn alt" href="char2/char2.html" target="_blank">View</a><a class="btn"
+                    href="char2/qr2.html" target="_blank">Print</a></div>
+        </div>
+        <div class="card"><img src="char3/char3.png" alt=""><b>Week 1 - Card 3</b>
+            <div class="row"><a class="btn alt" href="char3/char3.html" target="_blank">View</a><a class="btn"
+                    href="char3/qr3.html" target="_blank">Print</a></div>
+        </div>
+        <div class="card"><img src="char4/char4.png" alt=""><b>Week 2 - Card 1</b>
+            <div class="row"><a class="btn alt" href="char4/char4.html" target="_blank">View</a><a class="btn"
+                    href="char4/qr4.html" target="_blank">Print</a></div>
+        </div>
+        <div class="card"><img src="char5/char5.png" alt=""><b>Week 2 - Card 2</b>
+            <div class="row"><a class="btn alt" href="char5/char5.html" target="_blank">View</a><a class="btn"
+                    href="char5/qr5.html" target="_blank">Print</a></div>
+        </div>
+        <div class="card"><img src="char6/char6.png" alt=""><b>Week 2 - Card 3</b>
+            <div class="row"><a class="btn alt" href="char6/char6.html" target="_blank">View</a><a class="btn"
+                    href="char6/qr6.html" target="_blank">Print</a></div>
+        </div>
+        <div class="card"><img src="char7/char7.png" alt=""><b>Week 3 - Card 1</b>
+            <div class="row"><a class="btn alt" href="char7/char7.html" target="_blank">View</a><a class="btn"
+                    href="char7/qr7.html" target="_blank">Print</a></div>
+        </div>
+        <div class="card"><img src="char8/char8.png" alt=""><b>Week 3 - Card 2</b>
+            <div class="row"><a class="btn alt" href="char8/char8.html" target="_blank">View</a><a class="btn"
+                    href="char8/qr8.html" target="_blank">Print</a></div>
+        </div>
+        <div class="card"><img src="char9/char9.png" alt=""><b>Week 3 - Card 3</b>
+            <div class="row"><a class="btn alt" href="char9/char9.html" target="_blank">View</a><a class="btn"
+                    href="char9/qr9.html" target="_blank">Print</a></div>
+        </div>
+    </div>
+</body>
+
+</html>
