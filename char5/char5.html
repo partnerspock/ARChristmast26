@@ -245,7 +245,7 @@
 
     <div class="stage" id="home-stage">
         <div class="title">Christmas 2026</div>
-        <div class="char"><img src="char1.png" alt=""></div>
+        <div class="char"><img src="char5.png" alt=""></div>
         <div>
             <button class="reveal" id="ball" aria-label="Reveal"><img src="../assets/pokeball.png" alt=""></button>
             <p class="tap">Tap to open</p>
@@ -254,17 +254,15 @@
 
     <div id="flash"></div>
 
-    <!-- Container AR MindAR -->
     <div id="viewer">
         <button class="back-btn" id="close-ar">Kembali</button>
 
-        <!-- Scene MindAR Image Tracking (Menggunakan targets.mind dan model 3D char1.glb) -->
         <a-scene mindar-image="imageTargetSrc: targets.mind; uiScanning: yes;" color-space="sRGB"
             renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
             device-orientation-permission-ui="enabled: false">
 
             <a-assets>
-                <a-asset-item id="avatarModel" src="char1.glb"></a-asset-item>
+                <a-asset-item id="avatarModel" src="char5.glb"></a-asset-item>
             </a-assets>
 
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>

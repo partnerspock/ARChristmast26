@@ -181,7 +181,7 @@
 <body>
     <!-- <a href="../admin.html"><button class="btn alt" style="margin-bottom:20px;">◀ Back</button></a> -->
     <div class="head no-print">
-        <img class="thumb" src="char1.png" alt="">
+        <img class="thumb" src="char5.png" alt="">
         <div class="info">
             <h1>Card 1</h1>
             <div>
@@ -206,10 +206,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         const SIZE = 50, PAD = 3;   // mm: ukuran kotak QR dan margin putih
-        const ID = 'char1';   // ganti manual per karakter
+        const ID = 'char5';   // ganti manual per karakter
         const $ = id => document.getElementById(id);
 
-        // URL statis ke halaman karakter: tanpa token/expiry
         const target = new URL(ID + '.html', location.href).href;
         $('url').textContent = target;
 
