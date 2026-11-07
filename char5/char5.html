@@ -6,14 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#1a4a9c">
     <meta name="robots" content="noindex,nofollow">
-    <title>Christmas 2026 - MindAR</title>
+    <title>Christmas 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700&display=swap"
         rel="stylesheet">
-
-    <!-- Pustaka A-Frame dan MindAR Image Tracking A-Frame -->
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
     <style>
         :root {
             --blue: #1a4a9c;
@@ -59,6 +54,7 @@
             position: fixed;
             inset: 0;
             z-index: 1;
+            /* border: 10px solid var(--blue); */
             border-radius: 26px;
             pointer-events: none
         }
@@ -194,39 +190,6 @@
             opacity: 1
         }
 
-        /* Container AR Viewer */
-        #viewer {
-            position: fixed;
-            inset: 0;
-            z-index: 6;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .5s;
-            background: #000;
-        }
-
-        #viewer.on {
-            opacity: 1;
-            pointer-events: auto
-        }
-
-        /* Tombol Kembali / Tutup AR jika diperlukan */
-        .back-btn {
-            position: absolute;
-            top: calc(20px + env(safe-area-inset-top, 0px));
-            left: 20px;
-            z-index: 99;
-            font-family: 'Luckiest Guy', Impact, sans-serif;
-            font-size: 1rem;
-            color: var(--blue);
-            background: var(--yellow);
-            border: 2px solid var(--blue);
-            border-radius: 999px;
-            padding: 8px 18px;
-            cursor: pointer;
-            box-shadow: 0 4px 0 var(--deep);
-        }
-
         @media (prefers-reduced-motion:reduce) {
 
             .swirl,
@@ -239,67 +202,28 @@
 </head>
 
 <body>
-    <!-- Halaman Depan / UI Awal -->
-    <div class="swirl" id="home-bg"></div>
+    <div class="swirl"></div>
     <div class="frame"></div>
 
-    <div class="stage" id="home-stage">
+    <div class="stage">
         <div class="title">Christmas 2026</div>
         <div class="char"><img src="char5.png" alt=""></div>
         <div>
             <button class="reveal" id="ball" aria-label="Reveal"><img src="../assets/pokeball.png" alt=""></button>
-            <p class="tap">Tap to open</p>
+            <p class="tap">Tap to reveal</p>
         </div>
     </div>
 
     <div id="flash"></div>
 
-    <div id="viewer">
-        <button class="back-btn" id="close-ar">Kembali</button>
-
-        <a-scene mindar-image="imageTargetSrc: targets.mind; uiScanning: yes;" color-space="sRGB"
-            renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
-            device-orientation-permission-ui="enabled: false">
-
-            <a-assets>
-                <a-asset-item id="avatarModel" src="char5.glb"></a-asset-item>
-            </a-assets>
-
-            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-            <a-entity mindar-image-target="targetIndex: 0">
-                <a-gltf-model src="#avatarModel" position="0 0 0" scale="0.5 0.5 0.5" rotation="0 180 0">
-                </a-gltf-model>
-            </a-entity>
-        </a-scene>
-    </div>
-
     <script>
-        const ball = document.getElementById('ball');
-        const viewer = document.getElementById('viewer');
-        const flash = document.getElementById('flash');
-        const homeStage = document.getElementById('home-stage');
-        const homeBg = document.getElementById('home-bg');
-        const closeArBtn = document.getElementById('close-ar');
+        const ball = document.getElementById('ball'), flash = document.getElementById('flash');
 
-        // Tombol pokeball: shake -> flash -> buka tampilan AR kamera MindAR
         ball.addEventListener('click', () => {
             if (ball.classList.contains('shake')) return;
             ball.classList.add('shake');
             setTimeout(() => flash.classList.add('on'), 600);
-            setTimeout(() => {
-                viewer.classList.add('on');
-                homeStage.style.display = 'none';
-                homeBg.style.display = 'none';
-                flash.classList.remove('on');
-            }, 950);
-        });
-
-        // Tombol untuk kembali ke halaman awal
-        closeArBtn.addEventListener('click', () => {
-            viewer.classList.remove('on');
-            homeStage.style.display = 'flex';
-            homeBg.style.display = 'block';
-            ball.classList.remove('shake');
+            setTimeout(() => { location.href = 'trigger5.html'; }, 950);
         });
     </script>
 </body>
