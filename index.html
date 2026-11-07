@@ -199,8 +199,8 @@
 
     <div id="scanner">
         <div id="reader"></div>
-        <p id="msg">Arahkan kamera ke QR di kartu</p>
-        <button class="close" onclick="closeScan()">Tutup</button>
+        <p id="msg">Point the camera to QR</p>
+        <button class="close" onclick="closeScan()">Close</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -210,12 +210,12 @@
 
         async function openScan() {
             document.getElementById('scanner').classList.add('on');
-            msg.textContent = 'Arahkan kamera ke QR di kartu';
+            msg.textContent = 'Scan QR on the card';
             try {
                 qr = new Html5Qrcode('reader');
                 await qr.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 230, height: 230 } }, onScan, () => { });
             } catch (e) {
-                msg.textContent = 'Kamera tidak bisa dibuka. Izinkan akses kamera di browser.';
+                msg.textContent = 'Camera won\'t open. Allow camera access in browser.';
             }
         }
 
@@ -223,10 +223,10 @@
             if (busy) return;
             try {
                 const u = new URL(text, location.href);
-                if (u.origin !== location.origin) { msg.textContent = 'QR ini bukan dari kartu Christmas 2026.'; return; }
+                if (u.origin !== location.origin) { msg.textContent = 'QR is not from Christmas 2026 card.'; return; }
                 busy = true;
                 location.href = u.href;
-            } catch (e) { msg.textContent = 'QR tidak dikenali.'; }
+            } catch (e) { msg.textContent = 'QR not recognized.'; }
         }
 
         async function closeScan() {
