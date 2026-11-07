@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#1a4a9c">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Christmas 2026 - MindAR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700&display=swap"
+        rel="stylesheet">
+
+    <!-- Pustaka A-Frame dan MindAR Image Tracking A-Frame -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+        :root {
+            --blue: #1a4a9c;
+            --deep: #12336f;
+            --yellow: #ffcb05
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Nunito', system-ui, sans-serif;
+            color: #fff;
+            background: var(--deep)
+        }
+
+        .swirl {
+            position: fixed;
+            inset: -30%;
+            z-index: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .55) 0, transparent 28%),
+                conic-gradient(from 0deg at 50% 50%, #1b4aa8, #8fa8dc, #1b3f94, #c9d8f5, #2a5cc0, #7f9bd6, #1b4aa8);
+            filter: blur(28px);
+            animation: spin 40s linear infinite;
+            will-change: transform
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .frame {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            border-radius: 26px;
+            pointer-events: none
+        }
+
+        .stage {
+            position: relative;
+            z-index: 2;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+            padding: calc(30px + env(safe-area-inset-top, 0px)) 24px calc(26px + env(safe-area-inset-bottom, 0px))
+        }
+
+        .title {
+            font-family: 'Luckiest Guy', Impact, sans-serif;
+            font-size: clamp(1.8rem, 9vw, 2.8rem);
+            color: var(--yellow);
+            -webkit-text-stroke: 6px var(--blue);
+            paint-order: stroke fill;
+            text-shadow: 0 4px 0 var(--deep)
+        }
+
+        .char {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 10px 0
+        }
+
+        .char img {
+            max-width: 90%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 14px 18px rgba(0, 0, 0, .45));
+            animation: float 3.2s ease-in-out infinite
+        }
+
+        @keyframes float {
+            50% {
+                transform: translateY(-10px)
+            }
+        }
+
+        .reveal {
+            background: none;
+            border: 0;
+            padding: 8px;
+            cursor: pointer;
+            width: min(36vw, 16dvh, 140px);
+            min-width: 84px;
+            filter: drop-shadow(0 10px 12px rgba(0, 0, 0, .5));
+            animation: idle 2.6s ease-in-out infinite
+        }
+
+        .reveal img {
+            width: 100%;
+            display: block
+        }
+
+        @keyframes idle {
+
+            0%,
+            60%,
+            100% {
+                transform: rotate(0)
+            }
+
+            15% {
+                transform: rotate(-8deg)
+            }
+
+            30% {
+                transform: rotate(7deg)
+            }
+
+            45% {
+                transform: rotate(-4deg)
+            }
+        }
+
+        .reveal.shake {
+            animation: shake .7s ease-in-out forwards
+        }
+
+        @keyframes shake {
+            0% {
+                transform: rotate(0) scale(1)
+            }
+
+            20% {
+                transform: rotate(-18deg) scale(1.1)
+            }
+
+            40% {
+                transform: rotate(16deg) scale(1.1)
+            }
+
+            60% {
+                transform: rotate(-12deg) scale(1.15)
+            }
+
+            80% {
+                transform: rotate(8deg) scale(1.2)
+            }
+
+            100% {
+                transform: rotate(0) scale(1.3)
+            }
+        }
+
+        .tap {
+            font-size: .95rem;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, .5)
+        }
+
+        #flash {
+            position: fixed;
+            inset: 0;
+            z-index: 8;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .35s
+        }
+
+        #flash.on {
+            opacity: 1
+        }
+
+        /* Container AR Viewer */
+        #viewer {
+            position: fixed;
+            inset: 0;
+            z-index: 6;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .5s;
+            background: #000;
+        }
+
+        #viewer.on {
+            opacity: 1;
+            pointer-events: auto
+        }
+
+        /* Tombol Kembali / Tutup AR jika diperlukan */
+        .back-btn {
+            position: absolute;
+            top: calc(20px + env(safe-area-inset-top, 0px));
+            left: 20px;
+            z-index: 99;
+            font-family: 'Luckiest Guy', Impact, sans-serif;
+            font-size: 1rem;
+            color: var(--blue);
+            background: var(--yellow);
+            border: 2px solid var(--blue);
+            border-radius: 999px;
+            padding: 8px 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--deep);
+        }
+
+        @media (prefers-reduced-motion:reduce) {
+
+            .swirl,
+            .char img,
+            .reveal {
+                animation: none
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Halaman Depan / UI Awal -->
+    <div class="swirl" id="home-bg"></div>
+    <div class="frame"></div>
+
+    <div class="stage" id="home-stage">
+        <div class="title">Christmas 2026</div>
+        <div class="char"><img src="char1.png" alt=""></div>
+        <div>
+            <button class="reveal" id="ball" aria-label="Reveal"><img src="../assets/pokeball.png" alt=""></button>
+            <p class="tap">Tap to open</p>
+        </div>
+    </div>
+
+    <div id="flash"></div>
+
+    <!-- Container AR MindAR -->
+    <div id="viewer">
+        <button class="back-btn" id="close-ar">Kembali</button>
+
+        <!-- Scene MindAR Image Tracking (Menggunakan targets.mind dan model 3D char1.glb) -->
+        <a-scene mindar-image="imageTargetSrc: targets.mind; uiScanning: yes;" color-space="sRGB"
+            renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
+            device-orientation-permission-ui="enabled: false">
+
+            <a-assets>
+                <a-asset-item id="avatarModel" src="char1.glb"></a-asset-item>
+            </a-assets>
+
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+            <!-- Target index 0 (Gambar pertama yang dicompile ke targets.mind) -->
+            <a-entity mindar-image-target="targetIndex: 0">
+                <a-gltf-model src="#avatarModel" position="0 0 0" scale="0.5 0.5 0.5" rotation="0 180 0">
+                </a-gltf-model>
+            </a-entity>
+        </a-scene>
+    </div>
+
+    <script>
+        const ball = document.getElementById('ball');
+        const viewer = document.getElementById('viewer');
+        const flash = document.getElementById('flash');
+        const homeStage = document.getElementById('home-stage');
+        const homeBg = document.getElementById('home-bg');
+        const closeArBtn = document.getElementById('close-ar');
+
+        // Tombol pokeball: shake -> flash -> buka tampilan AR kamera MindAR
+        ball.addEventListener('click', () => {
+            if (ball.classList.contains('shake')) return;
+            ball.classList.add('shake');
+            setTimeout(() => flash.classList.add('on'), 600);
+            setTimeout(() => {
+                viewer.classList.add('on');
+                homeStage.style.display = 'none';
+                homeBg.style.display = 'none';
+                flash.classList.remove('on');
+            }, 950);
+        });
+
+        // Tombol untuk kembali ke halaman awal
+        closeArBtn.addEventListener('click', () => {
+            viewer.classList.remove('on');
+            homeStage.style.display = 'flex';
+            homeBg.style.display = 'block';
+            ball.classList.remove('shake');
+        });
+    </script>
+</body>
+
+</html>
