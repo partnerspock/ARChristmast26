@@ -42,7 +42,7 @@
             opacity: 0
         }
 
-        /* status debug, hapus elemen #dbg dan script-nya kalau sudah beres */
+        /* status debug, hapus elemen #dbg dan bagian scriptnya kalau sudah beres */
         #dbg {
             position: fixed;
             top: calc(12px + env(safe-area-inset-top, 0px));
@@ -63,52 +63,48 @@
 
     <p id="hint">Opening camera...</p>
     <p id="dbg"></p>
+
     <!--
-      SATU file .mind berisi 3 gambar. Urutan upload di compiler = targetIndex:
-        gambar 1 (char1) -> targetIndex 0
-        gambar 2 (char2) -> targetIndex 1
-        gambar 3 (char3) -> targetIndex 2
-      maxTrack: 3 = 3 kartu boleh terdeteksi bersamaan. Ganti ke 1 kalau cukup 1 kartu sekali scan (lebih ringan).
+      SATU file targets.mind berisi 9 gambar. Urutan upload di compiler = targetIndex:
+      char1 -> 0, char2 -> 1, ... char9 -> 8.
+      maxTrack: 1 = satu kartu sekali deteksi (lebih ringan). Naikkan kalau mau beberapa kartu sekaligus.
     -->
     <a-scene
-        mindar-image="imageTargetSrc: ./targets123.mind; maxTrack: 3; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
+        mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
         color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
-
-        <a-assets timeout="30000">
-            <a-asset-item id="model1" src="./char1/char1.glb"></a-asset-item>
-            <a-asset-item id="model2" src="./char3/char3.glb"></a-asset-item>
-            <a-asset-item id="model3" src="./char6/char6.glb"></a-asset-item>
-        </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
         <a-entity light="type: ambient; intensity: 1.2"></a-entity>
         <a-entity light="type: directional; intensity: 1.5" position="1 2 3"></a-entity>
-        <a-entity class="tgt" data-name="char1" mindar-image-target="targetIndex: 0">
-            <a-gltf-model src="#model1" rotation="0 0 0" position="0 0 0" scale="2.5 2.5 2.5"
-                animation-mixer></a-gltf-model>
-        </a-entity>
-        <a-entity class="tgt" data-name="char2" mindar-image-target="targetIndex: 1">
-            <a-gltf-model src="#model3" rotation="45 0 0" position="0 0 0" scale="2.5 2.5 2.5"
-                animation-mixer></a-gltf-model>
-        </a-entity>
-        <a-entity class="tgt" data-name="char3" mindar-image-target="targetIndex: 2">
-            <a-gltf-model src="#model6" rotation="90 0 0" position="0 0 0" scale="2.5 2.5 2.5"
-                animation-mixer></a-gltf-model>
-        </a-entity>
+
+        <!-- Satu baris = satu karakter. Atur glb, rotation (data-rot), position (data-pos), scale (data-scale) di sini. -->
+        <a-entity class="tgt" data-name="char1" data-glb="char1/char1.glb" data-rot="45 0 0" data-pos="0 0 0"
+            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 0"></a-entity>
+        <a-entity class="tgt" data-name="char2" data-glb="char2/char2.glb" data-rot="45 0 0" data-pos="0 0 0"
+            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 1"></a-entity>
+        <a-entity class="tgt" data-name="char3" data-glb="char3/char3.glb" data-rot="45 0 0" data-pos="0 0 0"
+            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 2"></a-entity>
+        <a-entity class="tgt" data-name="char4" data-glb="char4/char4.glb" data-rot="45 0 0" data-pos="0 0 0"
+            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 3"></a-entity>
+        <a-entity class="tgt" data-name="char5" data-glb="char5/char5.glb" data-rot="45 0 0" data-pos="0 0 0"
+            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 4"></a-entity>
+        <a-entity class="tgt" data-name="char6" data-glb="char6/char6.glb" data-rot="45 0 0" data-pos="0 0 0"
+            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 5"></a-entity>
+        <a-entity class="tgt" data-name="char7" data-glb="char7/char7.glb" data-rot="45 0 0" data-pos="0 0 0"
+            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 6"></a-entity>
+        <a-entity class="tgt" data-name="char8" data-glb="char8/char8.glb" data-rot="45 0 0" data-pos="0 0 0"
+            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 7"></a-entity>
+        <a-entity class="tgt" data-name="char9" data-glb="char9/char9.glb" data-rot="45 0 0" data-pos="0 0 0"
+            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 8"></a-entity>
     </a-scene>
 
     <script>
         const hint = document.getElementById('hint'), dbg = document.getElementById('dbg'),
-            scene = document.querySelector('a-scene'),
-            targets = [...document.querySelectorAll('.tgt')],
-            models = [...document.querySelectorAll('a-gltf-model')];
+            scene = document.querySelector('a-scene');
 
-        let cam = 'loading', glbOk = 0, glbFail = 0;
-        const seen = new Set();
-        const show = () => dbg.textContent =
-            'camera: ' + cam + ' | GLB: ' + glbOk + '/' + models.length + (glbFail ? ' (' + glbFail + ' FAILED)' : '') +
-            (seen.size ? ' | card: ' + [...seen].join(', ') : '');
+        let cam = 'loading', card = '', glb = '';
+        const show = () => dbg.textContent = 'camera: ' + cam + (card ? ' | card: ' + card : '') + (glb ? ' | GLB: ' + glb : '');
         show();
 
         scene.addEventListener('arReady', () => { cam = 'OK'; hint.textContent = 'Point the camera at a card'; show(); });
@@ -118,19 +114,25 @@
             hint.classList.remove('off'); show();
         });
 
-        models.forEach(m => {
-            m.addEventListener('model-loaded', () => { glbOk++; show(); });
-            m.addEventListener('model-error', () => { glbFail++; show(); });
-        });
-
-        // hint hilang kalau ada minimal 1 kartu terdeteksi
-        targets.forEach(el => {
-            el.addEventListener('targetFound', () => { seen.add(el.dataset.name); hint.classList.add('off'); show(); });
-            el.addEventListener('targetLost', () => {
-                seen.delete(el.dataset.name);
-                if (!seen.size) hint.classList.remove('off');
+        // GLB baru dimuat saat kartunya pertama kali terdeteksi, lalu dipakai ulang
+        document.querySelectorAll('.tgt').forEach(el => {
+            el.addEventListener('targetFound', () => {
+                card = el.dataset.name; hint.classList.add('off');
+                if (!el.querySelector('a-gltf-model')) {
+                    const m = document.createElement('a-gltf-model');
+                    m.setAttribute('src', el.dataset.glb);
+                    m.setAttribute('rotation', el.dataset.rot);
+                    m.setAttribute('position', el.dataset.pos);
+                    m.setAttribute('scale', el.dataset.scale);
+                    m.setAttribute('animation-mixer', '');
+                    m.addEventListener('model-loaded', () => { glb = 'OK'; show(); });
+                    m.addEventListener('model-error', () => { glb = 'FAILED (cek path ' + el.dataset.glb + ')'; show(); });
+                    glb = 'loading';
+                    el.appendChild(m);
+                }
                 show();
             });
+            el.addEventListener('targetLost', () => { hint.classList.remove('off'); card = ''; show(); });
         });
 
         window.addEventListener('error', e => { dbg.textContent = 'Error: ' + e.message; });
