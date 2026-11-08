@@ -61,47 +61,77 @@
 
 <body>
 
-    <p id="hint">Membuka kamera...</p>
+    <p id="hint">Opening camera...</p>
     <p id="dbg"></p>
-
-    <a-scene mindar-image="imageTargetSrc: ./3.mind; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
+    <!--
+      SATU file .mind berisi 3 gambar. Urutan upload di compiler = targetIndex:
+        gambar 1 (char1) -> targetIndex 0
+        gambar 2 (char2) -> targetIndex 1
+        gambar 3 (char3) -> targetIndex 2
+      maxTrack: 3 = 3 kartu boleh terdeteksi bersamaan. Ganti ke 1 kalau cukup 1 kartu sekali scan (lebih ringan).
+    -->
+    <a-scene
+        mindar-image="imageTargetSrc: ./targets123.mind; maxTrack: 3; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
         color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
+
         <a-assets timeout="30000">
-            <a-asset-item id="model" src="./char3.glb"></a-asset-item>
+            <a-asset-item id="model1" src="./char1/char1.glb"></a-asset-item>
+            <a-asset-item id="model2" src="./char3/char3.glb"></a-asset-item>
+            <a-asset-item id="model3" src="./char6/char6.glb"></a-asset-item>
         </a-assets>
+
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
         <a-entity light="type: ambient; intensity: 1.2"></a-entity>
         <a-entity light="type: directional; intensity: 1.5" position="1 2 3"></a-entity>
-        <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-gltf-model src="#model" rotation="45 0 0" position="0 0 0" scale="2.5 2.5 2.5"
+        <a-entity class="tgt" data-name="char1" mindar-image-target="targetIndex: 0">
+            <a-gltf-model src="#model1" rotation="0 0 0" position="0 0 0" scale="2.5 2.5 2.5"
+                animation-mixer></a-gltf-model>
+        </a-entity>
+        <a-entity class="tgt" data-name="char2" mindar-image-target="targetIndex: 1">
+            <a-gltf-model src="#model3" rotation="45 0 0" position="0 0 0" scale="2.5 2.5 2.5"
+                animation-mixer></a-gltf-model>
+        </a-entity>
+        <a-entity class="tgt" data-name="char3" mindar-image-target="targetIndex: 2">
+            <a-gltf-model src="#model6" rotation="90 0 0" position="0 0 0" scale="2.5 2.5 2.5"
                 animation-mixer></a-gltf-model>
         </a-entity>
     </a-scene>
 
     <script>
         const hint = document.getElementById('hint'), dbg = document.getElementById('dbg'),
-            t = document.getElementById('target'), scene = document.querySelector('a-scene'),
-            mdl = document.querySelector('a-gltf-model');
+            scene = document.querySelector('a-scene'),
+            targets = [...document.querySelectorAll('.tgt')],
+            models = [...document.querySelectorAll('a-gltf-model')];
 
-        let step = 'camera: loading | GLB: loading';
-        const show = () => dbg.textContent = step;
+        let cam = 'loading', glbOk = 0, glbFail = 0;
+        const seen = new Set();
+        const show = () => dbg.textContent =
+            'camera: ' + cam + ' | GLB: ' + glbOk + '/' + models.length + (glbFail ? ' (' + glbFail + ' FAILED)' : '') +
+            (seen.size ? ' | card: ' + [...seen].join(', ') : '');
         show();
 
-        scene.addEventListener('arReady', () => {
-            hint.textContent = 'Point the card to camera';
-            step = step.replace('camera: loading', 'camera: OK'); show();
-        });
+        scene.addEventListener('arReady', () => { cam = 'OK'; hint.textContent = 'Point the camera at a card'; show(); });
         scene.addEventListener('arError', () => {
-            hint.textContent = 'Camera failed to open. Open and allow camera access.';
-            hint.classList.remove('off');
-            step = step.replace('camera: loading', 'camera: ERROR'); show();
+            cam = 'ERROR';
+            hint.textContent = 'Camera failed to open. Open in Safari/Chrome and allow camera access.';
+            hint.classList.remove('off'); show();
         });
-        mdl.addEventListener('model-loaded', () => { step = step.replace('GLB: loading', 'GLB: OK'); show(); });
-        mdl.addEventListener('model-error', () => { step = step.replace('GLB: loading', 'GLB: FAILED'); show(); });
 
-        t.addEventListener('targetFound', () => { hint.classList.add('off'); dbg.textContent = step + ' | card: DETECTED'; });
-        t.addEventListener('targetLost', () => { hint.classList.remove('off'); dbg.textContent = step + ' | card: LOST'; });
+        models.forEach(m => {
+            m.addEventListener('model-loaded', () => { glbOk++; show(); });
+            m.addEventListener('model-error', () => { glbFail++; show(); });
+        });
+
+        // hint hilang kalau ada minimal 1 kartu terdeteksi
+        targets.forEach(el => {
+            el.addEventListener('targetFound', () => { seen.add(el.dataset.name); hint.classList.add('off'); show(); });
+            el.addEventListener('targetLost', () => {
+                seen.delete(el.dataset.name);
+                if (!seen.size) hint.classList.remove('off');
+                show();
+            });
+        });
 
         window.addEventListener('error', e => { dbg.textContent = 'Error: ' + e.message; });
         window.addEventListener('unhandledrejection', e => { dbg.textContent = 'Error: ' + (e.reason && e.reason.message || e.reason); });

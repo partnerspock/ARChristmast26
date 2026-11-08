@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Christmas 2026</title>
+
+    <!-- Hanya 3 script ini. Jangan tambah mindar-image.prod.js atau mindar-image-three.prod.js -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+        /* JANGAN kasih background berwarna di html/body: video kamera ada di belakang dan akan tertutup */
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+            font-family: system-ui, sans-serif
+        }
+
+        #hint {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+            z-index: 10;
+            text-align: center;
+            color: #fff;
+            font-size: 1rem;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, .8);
+            pointer-events: none;
+            padding: 0 24px;
+            transition: opacity .3s
+        }
+
+        #hint.off {
+            opacity: 0
+        }
+
+        /* status debug, hapus elemen #dbg dan script-nya kalau sudah beres */
+        #dbg {
+            position: fixed;
+            top: calc(12px + env(safe-area-inset-top, 0px));
+            left: 0;
+            right: 0;
+            z-index: 10;
+            text-align: center;
+            color: #ff0;
+            font-size: .8rem;
+            text-shadow: 0 1px 4px #000;
+            pointer-events: none;
+            padding: 0 16px
+        }
+    </style>
+</head>
+
+<body>
+
+    <p id="hint">Opening camera...</p>
+    <p id="dbg"></p>
+    <!--
+      SATU file .mind berisi 3 gambar. Urutan upload di compiler = targetIndex:
+        gambar 1 (char1) -> targetIndex 0
+        gambar 2 (char2) -> targetIndex 1
+        gambar 3 (char3) -> targetIndex 2
+      maxTrack: 3 = 3 kartu boleh terdeteksi bersamaan. Ganti ke 1 kalau cukup 1 kartu sekali scan (lebih ringan).
+    -->
+    <a-scene
+        mindar-image="imageTargetSrc: ./targets123.mind; maxTrack: 3; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
+        color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false">
+
+        <a-assets timeout="30000">
+            <a-asset-item id="model1" src="./char1/char1.glb"></a-asset-item>
+            <a-asset-item id="model2" src="./char3/char3.glb"></a-asset-item>
+            <a-asset-item id="model3" src="./char6/char6.glb"></a-asset-item>
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-entity light="type: ambient; intensity: 1.2"></a-entity>
+        <a-entity light="type: directional; intensity: 1.5" position="1 2 3"></a-entity>
+        <a-entity class="tgt" data-name="char1" mindar-image-target="targetIndex: 0">
+            <a-gltf-model src="#model1" rotation="0 0 0" position="0 0 0" scale="2.5 2.5 2.5"
+                animation-mixer></a-gltf-model>
+        </a-entity>
+        <a-entity class="tgt" data-name="char2" mindar-image-target="targetIndex: 1">
+            <a-gltf-model src="#model3" rotation="45 0 0" position="0 0 0" scale="2.5 2.5 2.5"
+                animation-mixer></a-gltf-model>
+        </a-entity>
+        <a-entity class="tgt" data-name="char3" mindar-image-target="targetIndex: 2">
+            <a-gltf-model src="#model6" rotation="90 0 0" position="0 0 0" scale="2.5 2.5 2.5"
+                animation-mixer></a-gltf-model>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        const hint = document.getElementById('hint'), dbg = document.getElementById('dbg'),
+            scene = document.querySelector('a-scene'),
+            targets = [...document.querySelectorAll('.tgt')],
+            models = [...document.querySelectorAll('a-gltf-model')];
+
+        let cam = 'loading', glbOk = 0, glbFail = 0;
+        const seen = new Set();
+        const show = () => dbg.textContent =
+            'camera: ' + cam + ' | GLB: ' + glbOk + '/' + models.length + (glbFail ? ' (' + glbFail + ' FAILED)' : '') +
+            (seen.size ? ' | card: ' + [...seen].join(', ') : '');
+        show();
+
+        scene.addEventListener('arReady', () => { cam = 'OK'; hint.textContent = 'Point the camera at a card'; show(); });
+        scene.addEventListener('arError', () => {
+            cam = 'ERROR';
+            hint.textContent = 'Camera failed to open. Open in Safari/Chrome and allow camera access.';
+            hint.classList.remove('off'); show();
+        });
+
+        models.forEach(m => {
+            m.addEventListener('model-loaded', () => { glbOk++; show(); });
+            m.addEventListener('model-error', () => { glbFail++; show(); });
+        });
+
+        // hint hilang kalau ada minimal 1 kartu terdeteksi
+        targets.forEach(el => {
+            el.addEventListener('targetFound', () => { seen.add(el.dataset.name); hint.classList.add('off'); show(); });
+            el.addEventListener('targetLost', () => {
+                seen.delete(el.dataset.name);
+                if (!seen.size) hint.classList.remove('off');
+                show();
+            });
+        });
+
+        window.addEventListener('error', e => { dbg.textContent = 'Error: ' + e.message; });
+        window.addEventListener('unhandledrejection', e => { dbg.textContent = 'Error: ' + (e.reason && e.reason.message || e.reason); });
+    </script>
+</body>
+
+</html>
