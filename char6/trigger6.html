@@ -67,22 +67,14 @@
     <a-scene mindar-image="imageTargetSrc: ./6.mind; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
         color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
-
         <a-assets timeout="30000">
             <a-asset-item id="model" src="./char6.glb"></a-asset-item>
         </a-assets>
-
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
         <a-entity light="type: ambient; intensity: 1.2"></a-entity>
         <a-entity light="type: directional; intensity: 1.5" position="1 2 3"></a-entity>
-
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <!-- tes deteksi: hapus tanda komentar baris di bawah, kotak merah harus muncul di atas kartu
-            <a-plane color="red" opacity="0.6" width="1" height="1" position="0 0 0"></a-plane> -->
-
-            <!-- rotation: kalau model tergeletak ganti "0 0 0". scale: besar/kecil. position z: tinggi dari kartu -->
-            <a-gltf-model src="#model" rotation="90 0 0" position="0 0 0" scale="0.5 0.5 0.5"
+            <a-gltf-model src="#model" rotation="90 0 0" position="90 0 0" scale="2.5 2.5 2.5"
                 animation-mixer></a-gltf-model>
         </a-entity>
     </a-scene>
@@ -92,24 +84,24 @@
             t = document.getElementById('target'), scene = document.querySelector('a-scene'),
             mdl = document.querySelector('a-gltf-model');
 
-        let step = 'kamera: memuat | GLB: memuat';
+        let step = 'camera: loading | GLB: loading';
         const show = () => dbg.textContent = step;
         show();
 
         scene.addEventListener('arReady', () => {
-            hint.textContent = 'Arahkan kamera ke kartu';
-            step = step.replace('kamera: memuat', 'kamera: OK'); show();
+            hint.textContent = 'Point the card to camera';
+            step = step.replace('camera: loading', 'camera: OK'); show();
         });
         scene.addEventListener('arError', () => {
-            hint.textContent = 'Kamera gagal dibuka. Buka lewat Safari dan izinkan akses kamera.';
+            hint.textContent = 'Camera failed to open. Open and allow camera access.';
             hint.classList.remove('off');
-            step = step.replace('kamera: memuat', 'kamera: ERROR'); show();
+            step = step.replace('camera: loading', 'camera: ERROR'); show();
         });
-        mdl.addEventListener('model-loaded', () => { step = step.replace('GLB: memuat', 'GLB: OK'); show(); });
-        mdl.addEventListener('model-error', () => { step = step.replace('GLB: memuat', 'GLB: GAGAL'); show(); });
+        mdl.addEventListener('model-loaded', () => { step = step.replace('GLB: loading', 'GLB: OK'); show(); });
+        mdl.addEventListener('model-error', () => { step = step.replace('GLB: loading', 'GLB: FAILED'); show(); });
 
-        t.addEventListener('targetFound', () => { hint.classList.add('off'); dbg.textContent = step + ' | kartu: TERDETEKSI'; });
-        t.addEventListener('targetLost', () => { hint.classList.remove('off'); dbg.textContent = step + ' | kartu: hilang'; });
+        t.addEventListener('targetFound', () => { hint.classList.add('off'); dbg.textContent = step + ' | card: DETECTED'; });
+        t.addEventListener('targetLost', () => { hint.classList.remove('off'); dbg.textContent = step + ' | card: LOST'; });
 
         window.addEventListener('error', e => { dbg.textContent = 'Error: ' + e.message; });
         window.addEventListener('unhandledrejection', e => { dbg.textContent = 'Error: ' + (e.reason && e.reason.message || e.reason); });
