@@ -4,17 +4,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#1a4a9c">
+    <meta name="theme-color" content="#8a1008">
     <meta name="robots" content="noindex,nofollow">
     <title>Christmas 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700&display=swap"
         rel="stylesheet">
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
     <style>
         :root {
-            --blue: #1a4a9c;
-            --deep: #12336f;
-            --yellow: #ffcb05
+            --red: #9a1409;
+            --gold: #f2b630;
         }
 
         * {
@@ -30,55 +28,31 @@
             -webkit-text-size-adjust: 100%;
             -webkit-tap-highlight-color: transparent;
             font-family: 'Nunito', system-ui, sans-serif;
-            color: #fff;
-            background: var(--deep)
+            color: var(--red);
+            /* ===== BACKGROUND =====
+               100% 100% = gambar memenuhi layar (agak melar di HP).
+               Ganti ke "cover" kalau mau proporsi asli (tepi bisa terpotong),
+               atau "contain" kalau mau utuh (ada sisa warna merah di atas/bawah). */
+            background: rgb(253, 241, 223) url('../assets/Group_60.png') center / 100% 100% no-repeat
         }
 
-        .swirl {
-            position: fixed;
-            inset: -30%;
-            z-index: 0;
-            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .55) 0, transparent 28%),
-                conic-gradient(from 0deg at 50% 50%, #1b4aa8, #8fa8dc, #1b3f94, #c9d8f5, #2a5cc0, #7f9bd6, #1b4aa8);
-            filter: blur(28px);
-            animation: spin 40s linear infinite;
-            will-change: transform
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg)
-            }
-        }
-
-        .frame {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-            /* border: 10px solid var(--blue); */
-            border-radius: 26px;
-            pointer-events: none
-        }
-
+        /* Area krem di gambar: kira-kira 5%-95% lebar, 4%-92% tinggi.
+           Bintang atas sampai ~10% tinggi. Atur padding di .stage kalau konten kurang pas. */
         .stage {
-            position: relative;
-            z-index: 2;
             height: 100dvh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
             text-align: center;
-            padding: calc(30px + env(safe-area-inset-top, 0px)) 24px calc(26px + env(safe-area-inset-bottom, 0px))
+            padding: calc(11dvh + env(safe-area-inset-top, 0px)) 10vw calc(9dvh + env(safe-area-inset-bottom, 0px))
         }
 
         .title {
             font-family: 'Luckiest Guy', Impact, sans-serif;
-            font-size: clamp(1.8rem, 9vw, 2.8rem);
-            color: var(--yellow);
-            -webkit-text-stroke: 6px var(--blue);
-            paint-order: stroke fill;
-            text-shadow: 0 4px 0 var(--deep)
+            font-size: clamp(1.6rem, 8.5vw, 2.6rem);
+            color: var(--red);
+            text-shadow: 0 3px 0 var(--gold)
         }
 
         .char {
@@ -92,10 +66,10 @@
         }
 
         .char img {
-            max-width: 90%;
+            max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            filter: drop-shadow(0 14px 18px rgba(0, 0, 0, .45));
+            filter: drop-shadow(0 12px 14px rgba(90, 20, 10, .35));
             animation: float 3.2s ease-in-out infinite
         }
 
@@ -110,9 +84,9 @@
             border: 0;
             padding: 8px;
             cursor: pointer;
-            width: min(36vw, 16dvh, 140px);
-            min-width: 84px;
-            filter: drop-shadow(0 10px 12px rgba(0, 0, 0, .5));
+            width: min(30vw, 14dvh, 120px);
+            min-width: 76px;
+            filter: drop-shadow(0 8px 10px rgba(90, 20, 10, .4));
             animation: idle 2.6s ease-in-out infinite
         }
 
@@ -173,8 +147,7 @@
         }
 
         .tap {
-            font-size: .95rem;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, .5)
+            font-size: .95rem
         }
 
         #flash {
@@ -191,61 +164,8 @@
             opacity: 1
         }
 
-        #viewer {
-            position: fixed;
-            inset: 0;
-            z-index: 6;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .5s;
-            background: radial-gradient(circle at 50% 40%, #4a73c9, #12336f)
-        }
-
-        #viewer.on {
-            opacity: 1;
-            pointer-events: auto
-        }
-
-        model-viewer {
-            width: 100%;
-            height: 100%;
-            --poster-color: transparent
-        }
-
-        .ar-btn {
-            position: absolute;
-            left: 50%;
-            bottom: calc(26px + env(safe-area-inset-bottom, 0px));
-            transform: translateX(-50%);
-            white-space: nowrap;
-            font-family: 'Luckiest Guy', Impact, sans-serif;
-            font-size: 1.3rem;
-            letter-spacing: .04em;
-            color: var(--blue);
-            background: var(--yellow);
-            border: 4px solid var(--blue);
-            border-radius: 999px;
-            min-height: 54px;
-            padding: 8px 36px;
-            cursor: pointer;
-            box-shadow: 0 5px 0 var(--deep)
-        }
-
-        .note {
-            position: absolute;
-            top: calc(18px + env(safe-area-inset-top, 0px));
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: .9rem;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, .6);
-            padding: 0 24px;
-            pointer-events: none
-        }
-
         @media (prefers-reduced-motion:reduce) {
 
-            .swirl,
             .char img,
             .reveal {
                 animation: none
@@ -255,57 +175,25 @@
 </head>
 
 <body>
-    <div class="swirl"></div>
-    <div class="frame"></div>
-
     <div class="stage">
         <div class="title">Christmas 2026</div>
         <div class="char"><img src="char3.png" alt=""></div>
         <div>
-            <button class="reveal" id="ball" aria-label="Reveal"><img src="../assets/pokeball.png" alt=""></button>
-            <p class="tap">Tap to open</p>
+            <button class="reveal" id="ball" aria-label="Reveal"><img src="../assets/box.png" alt=""></button>
+            <p class="tap">Tap to reveal</p>
         </div>
     </div>
 
     <div id="flash"></div>
 
-    <div id="viewer">
-        <model-viewer id="mv" src="char3.glb" poster="char3.png" alt="Christmas 2026 character" ar
-            ar-modes="webxr scene-viewer quick-look" ar-scale="auto" ar-placement="floor" camera-controls
-            touch-action="pan-y" autoplay shadow-intensity="1" environment-image="neutral" exposure="1.1"
-            loading="eager">
-            <button slot="ar-button" class="ar-btn">Lihat di AR</button>
-        </model-viewer>
-        <p class="note" id="note"></p>
-    </div>
-
     <script>
-        const ball = document.getElementById('ball'), mv = document.getElementById('mv'),
-            viewer = document.getElementById('viewer'), flash = document.getElementById('flash'),
-            note = document.getElementById('note');
-        let loaded = false, wantAR = false;
-        mv.addEventListener('load', () => { loaded = true; if (wantAR) launchAR(); });
-        mv.addEventListener('error', () => { note.textContent = 'Model 3D gagal dimuat.'; });
+        const ball = document.getElementById('ball'), flash = document.getElementById('flash');
 
-        function launchAR() {
-            wantAR = false;
-            if (mv.canActivateAR) {
-                try { mv.activateAR(); } catch (e) { note.textContent = 'Tekan "Lihat di AR" untuk membuka kamera.'; }
-            } else {
-                note.textContent = 'AR belum tersedia di perangkat ini. Putar model dengan jari.';
-            }
-        }
-
-        // pokeball: shake -> flash -> langsung buka kamera AR
         ball.addEventListener('click', () => {
             if (ball.classList.contains('shake')) return;
             ball.classList.add('shake');
             setTimeout(() => flash.classList.add('on'), 600);
-            setTimeout(() => {
-                viewer.classList.add('on');
-                flash.classList.remove('on');
-                if (loaded) launchAR(); else { wantAR = true; note.textContent = 'Memuat model...'; }
-            }, 950);
+            setTimeout(() => { location.href = 'trigger3.html'; }, 950);
         });
     </script>
 </body>
