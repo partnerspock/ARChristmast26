@@ -90,17 +90,17 @@
         <a-entity class="tgt" data-name="char3" data-glb="char3/char3.glb" data-rot="0 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 2"></a-entity>
         <a-entity class="tgt" data-name="char4" data-glb="char4/char4.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 3"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="night" mindar-image-target="targetIndex: 3"></a-entity>
         <a-entity class="tgt" data-name="char5" data-glb="char5/char5.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 4"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="night" mindar-image-target="targetIndex: 4"></a-entity>
         <a-entity class="tgt" data-name="char6" data-glb="char6/char6.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 5"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="night" mindar-image-target="targetIndex: 5"></a-entity>
         <a-entity class="tgt" data-name="char7" data-glb="char7/char7.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 6"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="wood" mindar-image-target="targetIndex: 6"></a-entity>
         <a-entity class="tgt" data-name="char8" data-glb="char8/char8.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 7"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="wood" mindar-image-target="targetIndex: 7"></a-entity>
         <a-entity class="tgt" data-name="char9" data-glb="char9/char9.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 8"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="wood" mindar-image-target="targetIndex: 8"></a-entity>
         <a-entity class="tgt" data-name="char10" data-glb="char10/char10.glb" data-rot="0 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="once" data-fx="snow" mindar-image-target="targetIndex: 9"></a-entity>
     </a-scene>
@@ -119,21 +119,21 @@
 
         // Cahaya (glow) untuk semua karakter
         const FX = {
-            glowSize: 0.2,           // UKURAN CAHAYA
-            glowOpacity: 0.1,        // terang cahaya (0-1)
+            glowSize: 0.05,           // UKURAN CAHAYA
+            glowOpacity: 0.05,        // terang cahaya (0-1)
             glowHeight: 1,           // tinggi cahaya dari kartu
-            lightIntensity: 0.2      // seberapa terang model tersorot
+            lightIntensity: 0.05      // seberapa terang model tersorot
         };
 
         // Mode partikel: dipilih per karakter lewat data-fx="snow|night|wood" (atau off).
-        // Semua mode sama dasarnya: muncul dari atas lalu jatuh ke bawah. Gambar = PNG milikmu.
+        // Semua mode sama dasarnya: muncul dari atas layar lalu jatuh ke bawah layar. Gambar = PNG milikmu.
         //   img     = file gambar partikel      count  = jumlah butiran (turunkan kalau HP berat)
-        //   size    = ukuran butiran            area   = lebar, tinggi, tinggi jatuh dari kartu
+        //   size    = ukuran butiran            area   = [lebar, tinggi, kedalaman] kotak jatuh di sekitar kartu (arah layar)
         //   speed   = kecepatan jatuh           flutter = goyangan kiri-kanan
         const FX_MODES = {
-            snow: { img: 'assets/snowflake.png', count: 40, size: 0.2, area: [0.6, 0.9, 0.4], speed: 0.43, flutter: 0.12 },
-            night: { img: 'assets/night.png', count: 40, size: 0.2, area: [0.6, 0.9, 0.4], speed: 0.43, flutter: 0.12 },   // <- ganti nama file
-            wood: { img: 'assets/wood.png', count: 40, size: 0.2, area: [0.6, 0.9, 0.4], speed: 0.43, flutter: 0.12 }    // <- ganti nama file
+            snow: { img: 'assets/snowflake.png', count: 40, size: 0.1, area: [1, 3, 0.8], speed: 0.13, flutter: 0.12 },
+            night: { img: 'assets/night.png', count: 30, size: 0.2, area: [1.5, 2.5, 0.8], speed: 0.23, flutter: 0.12 },   // <- ganti nama file
+            wood: { img: 'assets/wood.png', count: 20, size: 0.3, area: [2, 2, 0.8], speed: 0.33, flutter: 0.12 }    // <- ganti nama file
         };
         const FXLOG = { msg: '' };
 
@@ -207,6 +207,7 @@
                 const T = AFRAME.THREE, M = FX_MODES[this.data.mode];
                 if (!M) return;
                 this.M = M;
+                this.inv = new T.Quaternion(); this.tmp = new T.Vector3();
                 loadTex(this.data.mode).then(tex => {
                     const img = tex.image, aspect = (img && img.width && img.height) ? img.width / img.height : 1;
                     const mat = new T.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
@@ -214,9 +215,11 @@
                     for (let i = 0; i < M.count; i++) {
                         const sp = new T.Sprite(mat), s = M.size * (0.6 + Math.random() * 0.8);
                         sp.scale.set(s * aspect, s, 1);
-                        const bx = (Math.random() - .5) * A[0], by = (Math.random() - .5) * A[1];
-                        sp.position.set(bx, by, Math.random() * A[2]);
-                        flakes.push({ sp, bx, by, v: M.speed * (.6 + Math.random() * .8), ph: Math.random() * 6.283, f: .6 + Math.random() * .8 });
+                        // posisi disimpan dalam arah LAYAR: x = kanan, y = atas, z = ke arah kamera (pusat = kartu)
+                        flakes.push({
+                            sp, s, bx: (Math.random() - .5) * A[0], y: (Math.random() - .5) * A[1], bz: Math.random() * A[2],
+                            v: M.speed * (.6 + Math.random() * .8), ph: Math.random() * 6.283, f: .6 + Math.random() * .8
+                        });
                         group.add(sp);
                     }
                     this.flakes = flakes;
@@ -226,13 +229,18 @@
             tick(t, dt) {
                 if (!this.flakes) return;
                 dt = Math.min(dt, 50) / 1000;
-                const M = this.M, A = M.area, ts = t / 1000;
+                const M = this.M, A = M.area, ts = t / 1000, par = this.el.object3D.parent;
+                this.inv.copy(par.quaternion).invert();          // putar balik arah kartu -> arah layar
+                const sc = par.scale.x || 1;
                 for (const f of this.flakes) {
-                    const p = f.sp.position, a = ts * f.f + f.ph;
-                    p.z -= f.v * dt;                                   // jatuh ke bawah
-                    p.x = f.bx + Math.sin(a) * M.flutter;
-                    p.y = f.by + Math.sin(a * 2) * M.flutter * 0.5;
-                    if (p.z < 0) { p.z = A[2]; f.bx = (Math.random() - .5) * A[0]; f.by = (Math.random() - .5) * A[1]; }   // ulang dari atas
+                    const a = ts * f.f + f.ph;
+                    f.y -= f.v * dt;                              // turun ke bawah layar
+                    if (f.y < -A[1] / 2) {                        // keluar di bawah -> muncul lagi dari atas
+                        f.y = A[1] / 2; f.bx = (Math.random() - .5) * A[0]; f.bz = Math.random() * A[2];
+                    }
+                    this.tmp.set(f.bx + Math.sin(a) * M.flutter, f.y, f.bz + Math.sin(a * 2) * M.flutter * 0.5)
+                        .applyQuaternion(this.inv).divideScalar(sc);
+                    f.sp.position.copy(this.tmp);
                 }
             }
         });
