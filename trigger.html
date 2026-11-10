@@ -135,11 +135,11 @@
 
         // Setting partikel (dipakai SEMUA mode). Satuan: lebar kartu = 1.
         const PARTICLE = {
-            count: 60,              // jumlah butiran (turunkan ke 40 kalau HP berat)
-            sizeMin: 0.04,          // butiran paling kecil
-            sizeMax: 0.22,          // butiran paling besar
-            sizeBias: 2.2,          // 1 = rata, makin besar = makin banyak yang kecil, sedikit yang besar
-            area: [3.2, 3.2, 1.6],  // [lebar, tinggi, kedalaman] area sebar: besarkan = makin menyebar
+            count: 120,             // jumlah butiran (turunkan ke 80 kalau HP berat, naikkan kalau mau lebih ramai)
+            sizeMin: 0.07,          // butiran paling kecil
+            sizeMax: 0.35,          // butiran paling besar
+            sizeBias: 1.5,          // 1 = rata, makin besar = makin banyak yang kecil, sedikit yang besar
+            area: [2.4, 2.8, 1.2],  // [lebar, tinggi, kedalaman] area sebar: besarkan = makin menyebar tapi makin jarang
             centerY: 0.3,           // geser area ke atas (+) / bawah (-) dari pusat kartu
             speedMin: 0.05,         // kecepatan jatuh paling lambat
             speedMax: 0.14,         // kecepatan jatuh paling cepat (butiran besar cenderung lebih cepat)
