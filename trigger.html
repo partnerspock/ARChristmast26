@@ -42,7 +42,7 @@
             opacity: 0
         }
 
-        /* status debug, hapus elemen #dbg dan bagian scriptnya kalau sudah beres */
+        /* teks kuning untuk testing: tampil/sembunyi diatur lewat DEBUG di script paling bawah */
         #dbg {
             position: fixed;
             top: calc(12px + env(safe-area-inset-top, 0px));
@@ -65,8 +65,8 @@
     <p id="dbg"></p>
 
     <!--
-      SATU file targets.mind berisi 9 gambar. Urutan upload di compiler = targetIndex:
-      char1 -> 0, char2 -> 1, ... char9 -> 8.
+      SATU file .mind berisi 10 gambar. Urutan upload di compiler = targetIndex:
+      char1 -> 0, char2 -> 1, ... char10 -> 9.
       maxTrack: 1 = satu kartu sekali deteksi (lebih ringan). Naikkan kalau mau beberapa kartu sekaligus.
     -->
     <a-scene
@@ -106,18 +106,27 @@
     </a-scene>
 
     <script>
-        // ===== EFEK SALJU + CAHAYA: semua pengaturan ada di sini =====
+        // ===== PENGATURAN EFEK: semua angka ada di sini =====
         // Satuan: lebar kartu = 1 unit. Sumbu Z = tegak lurus kartu (naik dari permukaan kartu).
+
+        // Penghalus gerakan: model mengikuti kartu dengan halus, jadi tidak goyang.
+        const SMOOTH = {
+            on: true,       // false = ikuti kartu apa adanya (seperti sebelumnya)
+            slow: 3,        // saat kartu nyaris diam: KECILKAN = makin stabil (mis. 1.5), besarkan = lebih responsif
+            fast: 20,       // saat kartu digerakkan: BESARKAN = model lebih cepat menyusul
+            range: 0.05     // batas "gerakan kecil" dianggap goyangan
+        };
+
         const FX = {
             snowCount: 100,          // jumlah butiran (50-150, turunkan kalau HP berat)
-            flake: 0.8,             // ukuran butiran rata-rata (naikkan kalau kurang kelihatan)
-            area: [1.6, 2.0, 1.4],   // lebar, tinggi, dan tinggi jatuh dari kartu
+            flake: 0.8,              // ukuran butiran rata-rata
+            area: [0.6, 0.9, 0.4],   // lebar, tinggi, dan tinggi jatuh dari kartu
             speed: 0.43,             // kecepatan jatuh
-            flutter: 0.22,           // goyangan kiri-kanan
-            glowSize: 0.7,           // UKURAN CAHAYA (kecilkan/besarkan di sini)
-            glowOpacity: 0.15,       // terang cahaya (0-1)
-            glowHeight: 1,         // tinggi cahaya dari kartu
-            lightIntensity: 1        // seberapa terang model tersorot
+            flutter: 0.12,           // goyangan kiri-kanan
+            glowSize: 0.4,           // UKURAN CAHAYA
+            glowOpacity: 0.1,       // terang cahaya (0-1)
+            glowHeight: 1,           // tinggi cahaya dari kartu
+            lightIntensity: 0.5        // seberapa terang model tersorot
         };
 
         function radialTex(stops) {
@@ -128,7 +137,6 @@
             return new AFRAME.THREE.CanvasTexture(c);
         }
 
-        // Butiran: inti putih + tepi kebiruan, supaya terlihat di latar terang
         function flakeTex() {
             const c = document.createElement('canvas'); c.width = c.height = 64;
             const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 2, 32, 32, 30);
@@ -137,6 +145,36 @@
             x.fillStyle = g; x.beginPath(); x.arc(32, 32, 30, 0, 6.2832); x.fill();
             return new AFRAME.THREE.CanvasTexture(c);
         }
+
+        // Holder mengikuti kartu dengan penghalus: gerakan kecil (goyangan tracking) diredam,
+        // gerakan besar (HP/kartu digeser) tetap diikuti.
+        AFRAME.registerComponent('smooth-follow', {
+            init() {
+                const T = AFRAME.THREE;
+                this.src = this.el.targetEl.object3D;
+                this.p = new T.Vector3(); this.q = new T.Quaternion(); this.s = new T.Vector3(1, 1, 1);
+                this.tp = new T.Vector3(); this.tq = new T.Quaternion(); this.ts = new T.Vector3(1, 1, 1);
+                this.ready = false;
+                this.el.object3D.visible = false;
+            },
+            tick(t, dt) {
+                const o = this.el.object3D, src = this.src;
+                o.visible = src.visible;
+                if (!src.visible) { this.ready = false; return; }
+                src.matrix.decompose(this.tp, this.tq, this.ts);
+                if (!this.ready || !SMOOTH.on) {
+                    this.p.copy(this.tp); this.q.copy(this.tq); this.s.copy(this.ts); this.ready = true;
+                } else {
+                    dt = Math.min(dt, 100) / 1000;
+                    const ang = 2 * Math.acos(Math.min(1, Math.abs(this.q.dot(this.tq))));
+                    const d = this.p.distanceTo(this.tp) + ang * 0.3;
+                    const k = SMOOTH.slow + (SMOOTH.fast - SMOOTH.slow) * Math.min(1, d / SMOOTH.range);
+                    const a = 1 - Math.exp(-k * dt);
+                    this.p.lerp(this.tp, a); this.q.slerp(this.tq, a); this.s.lerp(this.ts, a);
+                }
+                o.position.copy(this.p); o.quaternion.copy(this.q); o.scale.copy(this.s);
+            }
+        });
 
         // Salju: sprite kecil, jatuh pelan ke kartu, goyang pola angka delapan, ulang dari atas
         AFRAME.registerComponent('snow-fx', {
@@ -186,72 +224,123 @@
             }
         });
 
-        // Dipasang sekali per kartu saat pertama kali terdeteksi
-        function addFx(target) {
-            if (target.dataset.fxDone) return;
-            target.dataset.fxDone = '1';
-
-            if (target.dataset.snow === 'on') {            // salju hanya untuk karakter yang di-set data-snow="on"
+        // Dipasang di holder: salju hanya kalau data-snow="on", cahaya untuk semua
+        function addFx(target, holder) {
+            if (target.dataset.snow === 'on') {
                 const snow = document.createElement('a-entity');
                 snow.setAttribute('snow-fx', '');
-                target.appendChild(snow);
+                holder.appendChild(snow);
             }
-
             const glow = document.createElement('a-entity');
             glow.setAttribute('glow-fx', '');
             glow.setAttribute('position', '0 0 ' + FX.glowHeight);
             glow.setAttribute('light', 'type: point; color: #fff1c2; intensity: ' + FX.lightIntensity + '; decay: 2');
-            target.appendChild(glow);
+            holder.appendChild(glow);
         }
     </script>
 
     <script>
+        // ===== TESTING: true = tampilkan teks kuning di atas layar, false = sembunyikan =====
+        const DEBUG = true;
+
         const hint = document.getElementById('hint'), dbg = document.getElementById('dbg'),
             scene = document.querySelector('a-scene');
+        dbg.style.display = DEBUG ? '' : 'none';
 
-        let cam = 'loading', card = '', glb = '', mind = 'checking', songMsg = '';
-        const show = () => dbg.textContent = 'mind: ' + mind + ' | camera: ' + cam + (card ? ' | card: ' + card : '') + (glb ? ' | GLB: ' + glb : '') + (songMsg ? ' | song: ' + songMsg : '');
+        let cam = 'loading', card = '', glb = '', mind = 'checking', songMsg = 'loading';
+        const show = () => {
+            if (!DEBUG) return;
+            dbg.textContent = 'mind: ' + mind + ' | camera: ' + cam + (card ? ' | card: ' + card : '') +
+                (glb ? ' | GLB: ' + glb : '') + ' | song: ' + songMsg;
+        };
         show();
 
-        // cek file .mind: harus ada dan berukuran besar (bukan halaman 404 yang cuma ~79 byte)
-        fetch('assets/update.mind').then(r => r.arrayBuffer().then(b => {
-            mind = !r.ok ? 'NOT FOUND (' + r.status + ') - cek path/nama file .mind'
-                : b.byteLength < 1000 ? 'INVALID (' + b.byteLength + ' byte)'
-                    : 'OK (' + Math.round(b.byteLength / 1024) + ' KB)';
-            show();
-        })).catch(() => { mind = 'GAGAL diambil'; show(); });
+        // cek file .mind (hanya saat DEBUG): harus ada dan berukuran besar, bukan halaman 404 kecil
+        if (DEBUG) {
+            fetch('assets/update.mind').then(r => r.arrayBuffer().then(b => {
+                mind = !r.ok ? 'NOT FOUND (' + r.status + ') - cek path/nama file .mind'
+                    : b.byteLength < 1000 ? 'INVALID (' + b.byteLength + ' byte)'
+                        : 'OK (' + Math.round(b.byteLength / 1024) + ' KB)';
+                show();
+            })).catch(() => { mind = 'GAGAL diambil'; show(); });
+        }
 
-        // ===== LAGU (1 lagu untuk semua karakter, mulai saat kartu spawn) =====
+        // ===== LAGU: 1 lagu, autoplay saat kartu spawn, fade in/out, loop crossfade =====
         const SONG = {
-            src: 'assets/song.mp3',     // <- GANTI ke nama file lagumu di folder assets
-            volume: 0.7,                // 0 - 1
-            loop: true,
-            restartOnSpawn: false       // true = lagu mulai dari awal tiap kartu terdeteksi lagi
+            src: 'assets/song.mp3',   // <- GANTI ke nama file lagumu di folder assets
+            volume: 0.7,              // 0 - 1
+            fadeIn: 2,                // detik: fade in saat kartu terdeteksi
+            fadeOut: 1.5,             // detik: fade out saat kartu hilang
+            crossfade: 9              // detik: tumpang tindih akhir lagu dengan awal lagu berikutnya
         };
-        const song = new Audio(SONG.src);
-        song.loop = SONG.loop; song.volume = SONG.volume; song.preload = 'auto';
-        let wantSong = false;
+
+        let ctx = null, master = null, buf = null, started = false, wantSong = false;
+
+        function rampMaster(to, secs) {
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            master.gain.cancelScheduledValues(now);
+            master.gain.setValueAtTime(master.gain.value, now);
+            master.gain.linearRampToValueAtTime(to, now + secs);
+        }
+
+        // satu "putaran" lagu; putaran berikutnya dijadwalkan mulai crossfade detik sebelum yang ini selesai
+        function startLayer(when, first) {
+            const dur = buf.duration, X = Math.max(0, Math.min(SONG.crossfade, dur / 2 - 0.5));
+            const src = ctx.createBufferSource(); src.buffer = buf;
+            const g = ctx.createGain(); src.connect(g); g.connect(master);
+            if (first) g.gain.setValueAtTime(1, when);
+            else { g.gain.setValueAtTime(0, when); g.gain.linearRampToValueAtTime(1, when + X); }
+            g.gain.setValueAtTime(1, when + dur - X);
+            g.gain.linearRampToValueAtTime(0, when + dur);
+            src.start(when); src.stop(when + dur + 0.3);
+
+            const next = when + dur - X;
+            setTimeout(() => startLayer(Math.max(next, ctx.currentTime), false),
+                Math.max(0, (next - ctx.currentTime - 2) * 1000));
+        }
+
+        function beginSong() {
+            if (started || !buf) return;
+            started = true;
+            startLayer(ctx.currentTime + 0.05, true);
+        }
+
+        function initSong() {
+            try {
+                ctx = new (window.AudioContext || window.webkitAudioContext)();
+                master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+                ctx.onstatechange = () => { if (ctx.state === 'running' && wantSong) { songMsg = 'playing'; show(); } };
+                fetch(SONG.src).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+                    .then(ab => new Promise((ok, no) => ctx.decodeAudioData(ab, ok, no)))
+                    .then(b => {
+                        buf = b; songMsg = 'ready'; show();
+                        if (wantSong) { beginSong(); rampMaster(SONG.volume, SONG.fadeIn); }
+                    })
+                    .catch(() => { songMsg = 'FAILED (cek ' + SONG.src + ')'; show(); });
+            } catch (e) { songMsg = 'tidak didukung'; show(); }
+        }
 
         function playSong() {
             wantSong = true;
-            if (SONG.restartOnSpawn) song.currentTime = 0;
-            song.play().catch(() => {   // iPhone/Safari memblokir suara sampai ada sentuhan
-                hint.textContent = 'Tap the screen to turn on the music';
-                hint.classList.remove('off');
-            });
+            if (!ctx) return;
+            if (ctx.state !== 'running') ctx.resume().catch(() => { });
+            if (buf) { beginSong(); rampMaster(SONG.volume, SONG.fadeIn); }
+            songMsg = ctx.state === 'running' ? 'playing' : 'menunggu sentuhan layar'; show();
         }
-        function pauseSong() { wantSong = false; song.pause(); }
 
-        song.addEventListener('playing', () => {
-            songMsg = 'OK'; show();
-            hint.textContent = 'Point the camera at a card';
-            if (card) hint.classList.add('off');
-        });
-        song.addEventListener('error', () => { songMsg = 'FAILED (cek ' + SONG.src + ')'; show(); });
+        function stopSong() {       // fade out, lagu tetap berjalan diam-diam supaya terasa tak terputus
+            wantSong = false;
+            rampMaster(0, SONG.fadeOut);
+        }
+
+        initSong();
+        // browser (terutama iPhone) bisa memblokir suara otomatis: sentuhan pertama membukanya tanpa teks apa pun
         ['touchend', 'click'].forEach(ev => document.addEventListener(ev, () => {
-            if (wantSong && song.paused) song.play().catch(() => { });
+            if (ctx && ctx.state !== 'running') ctx.resume().catch(() => { });
         }, { passive: true }));
 
+        // ===== KAMERA & KARTU =====
         scene.addEventListener('arReady', () => { cam = 'OK'; hint.textContent = 'Point the camera at a card'; show(); });
         scene.addEventListener('arError', () => {
             cam = 'ERROR';
@@ -259,13 +348,20 @@
             hint.classList.remove('off'); show();
         });
 
-        // GLB baru dimuat saat kartunya pertama kali terdeteksi, lalu dipakai ulang
+        // Model + efek dibuat sekali saat kartunya pertama kali terdeteksi, di dalam holder yang mengikuti kartu dengan halus
         document.querySelectorAll('.tgt').forEach(el => {
             el.addEventListener('targetFound', () => {
                 card = el.dataset.name; hint.classList.add('off');
-                addFx(el);
                 playSong();
-                if (!el.querySelector('a-gltf-model')) {
+                if (!el.holder) {
+                    const holder = document.createElement('a-entity');
+                    holder.targetEl = el;
+                    holder.setAttribute('smooth-follow', '');
+                    el.holder = holder;
+                    scene.appendChild(holder);
+
+                    addFx(el, holder);
+
                     const m = document.createElement('a-gltf-model');
                     m.setAttribute('src', el.dataset.glb);
                     m.setAttribute('rotation', el.dataset.rot);
@@ -277,15 +373,15 @@
                     m.addEventListener('model-loaded', () => { glb = 'OK'; show(); });
                     m.addEventListener('model-error', () => { glb = 'FAILED (cek path ' + el.dataset.glb + ')'; show(); });
                     glb = 'loading';
-                    el.appendChild(m);
+                    holder.appendChild(m);
                 }
                 show();
             });
-            el.addEventListener('targetLost', () => { hint.classList.remove('off'); card = ''; pauseSong(); show(); });
+            el.addEventListener('targetLost', () => { hint.classList.remove('off'); card = ''; stopSong(); show(); });
         });
 
-        window.addEventListener('error', e => { dbg.textContent = 'Error: ' + e.message; });
-        window.addEventListener('unhandledrejection', e => { dbg.textContent = 'Error: ' + (e.reason && e.reason.message || e.reason); });
+        window.addEventListener('error', e => { if (DEBUG) dbg.textContent = 'Error: ' + e.message; });
+        window.addEventListener('unhandledrejection', e => { if (DEBUG) dbg.textContent = 'Error: ' + (e.reason && e.reason.message || e.reason); });
     </script>
 </body>
 
