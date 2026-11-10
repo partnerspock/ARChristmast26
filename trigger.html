@@ -65,12 +65,12 @@
     <p id="dbg"></p>
 
     <!--
-      SATU file targets.mindgu berisi 9 gambar. Urutan upload di compiler = targetIndex:
+      SATU file targets.mind berisi 9 gambar. Urutan upload di compiler = targetIndex:
       char1 -> 0, char2 -> 1, ... char9 -> 8.
       maxTrack: 1 = satu kartu sekali deteksi (lebih ringan). Naikkan kalau mau beberapa kartu sekaligus.
     -->
     <a-scene
-        mindar-image="imageTargetSrc: assets/update.mind; maxTrack: 1; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
+        mindar-image="imageTargetSrc: ./update.mind; maxTrack: 1; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
         color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
 
@@ -79,27 +79,122 @@
         <a-entity light="type: directional; intensity: 1.5" position="1 2 3"></a-entity>
 
         <!-- Satu baris = satu karakter. Atur glb, rotation (data-rot), position (data-pos), scale (data-scale) di sini. -->
-        <a-entity class="tgt" data-name="char1" data-glb="char1/char1.glb" data-rot="50 50 50" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char1" data-glb="char1/char1.glb" data-rot="0 0 0" data-pos="0 0 0"
             data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 0"></a-entity>
-        <a-entity class="tgt" data-name="char2" data-glb="char2/char2.glb" data-rot="0 100 100" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char2" data-glb="char2/char2.glb" data-rot="45 0 0" data-pos="0 0 0"
             data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 1"></a-entity>
-        <a-entity class="tgt" data-name="char3" data-glb="char3/char3.glb" data-rot="0 0 100" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char3" data-glb="char3/char3.glb" data-rot="0 0 0" data-pos="0 0 0"
             data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 2"></a-entity>
-        <a-entity class="tgt" data-name="char4" data-glb="char4/char4.glb" data-rot="0 100 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char4" data-glb="char4/char4.glb" data-rot="45 0 0" data-pos="0 0 0"
             data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 3"></a-entity>
-        <a-entity class="tgt" data-name="char5" data-glb="char5/char5.glb" data-rot="0 50 50" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char5" data-glb="char5/char5.glb" data-rot="45 0 0" data-pos="0 0 0"
             data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 4"></a-entity>
-        <a-entity class="tgt" data-name="char6" data-glb="char6/char6.glb" data-rot="0 0 50" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char6" data-glb="char6/char6.glb" data-rot="45 0 0" data-pos="0 0 0"
             data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 5"></a-entity>
-        <a-entity class="tgt" data-name="char7" data-glb="char7/char7.glb" data-rot="0 50 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char7" data-glb="char7/char7.glb" data-rot="45 0 0" data-pos="0 0 0"
             data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 6"></a-entity>
-        <a-entity class="tgt" data-name="char8" data-glb="char8/char8.glb" data-rot="0 20 20" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char8" data-glb="char8/char8.glb" data-rot="45 0 0" data-pos="0 0 0"
             data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 7"></a-entity>
-        <a-entity class="tgt" data-name="char9" data-glb="char9/char9.glb" data-rot="0 0 20" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char9" data-glb="char9/char9.glb" data-rot="45 0 0" data-pos="0 0 0"
             data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 8"></a-entity>
-        <a-entity class="tgt" data-name="char9" data-glb="char10/char10.glb" data-rot="0 20 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char9" data-glb="char10/char10.glb" data-rot="45 0 0" data-pos="0 0 0"
             data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 8"></a-entity>
     </a-scene>
+
+    <script>
+        // ===== EFEK SALJU + CAHAYA (tanpa library tambahan, tanpa ubah GLB) =====
+        // Satuan: lebar kartu = 1 unit, sumbu Z = tegak lurus kartu (naik dari permukaan kartu).
+        function radialTex(stops) {
+            const c = document.createElement('canvas'); c.width = c.height = 128;
+            const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+            stops.forEach(s => g.addColorStop(s[0], s[1]));
+            x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+            return new AFRAME.THREE.CanvasTexture(c);
+        }
+
+        // Salju jatuh ke arah kartu
+        AFRAME.registerComponent('snow-fx', {
+            schema: {
+                count: { default: 220 },        // jumlah butiran (turunkan kalau HP berat)
+                w: { default: 1.8 },            // lebar area
+                h: { default: 2.2 },            // tinggi area
+                d: { default: 1.6 },            // tinggi jatuh dari kartu
+                size: { default: 0.04 },        // ukuran butiran
+                speed: { default: 0.22 }        // kecepatan jatuh
+            },
+            init() {
+                const T = AFRAME.THREE, d = this.data, n = d.count;
+                const pos = new Float32Array(n * 3);
+                this.vel = new Float32Array(n); this.ph = new Float32Array(n);
+                for (let i = 0; i < n; i++) {
+                    pos[i * 3] = (Math.random() - .5) * d.w;
+                    pos[i * 3 + 1] = (Math.random() - .5) * d.h;
+                    pos[i * 3 + 2] = Math.random() * d.d;
+                    this.vel[i] = d.speed * (.5 + Math.random());
+                    this.ph[i] = Math.random() * 6.28;
+                }
+                const g = new T.BufferGeometry();
+                g.setAttribute('position', new T.BufferAttribute(pos, 3));
+                const m = new T.PointsMaterial({
+                    size: d.size, map: radialTex([[0, 'rgba(255,255,255,1)'], [.5, 'rgba(255,255,255,.6)'], [1, 'rgba(255,255,255,0)']]),
+                    transparent: true, depthWrite: false
+                });
+                this.pts = new T.Points(g, m); this.pts.frustumCulled = false;
+                this.el.setObject3D('snow', this.pts);
+            },
+            tick(t, dt) {
+                if (!this.pts) return;
+                dt = Math.min(dt, 50) / 1000;
+                const d = this.data, a = this.pts.geometry.attributes.position, p = a.array;
+                for (let i = 0; i < this.vel.length; i++) {
+                    p[i * 3 + 2] -= this.vel[i] * dt;                                   // jatuh
+                    p[i * 3] += Math.sin(t / 1000 + this.ph[i]) * 0.08 * dt;           // goyang
+                    if (p[i * 3 + 2] < 0) {                                              // ulang dari atas
+                        p[i * 3] = (Math.random() - .5) * d.w;
+                        p[i * 3 + 1] = (Math.random() - .5) * d.h;
+                        p[i * 3 + 2] = d.d;
+                    }
+                }
+                a.needsUpdate = true;
+            }
+        });
+
+        // Cahaya terang berdenyut di belakang/atas karakter
+        AFRAME.registerComponent('glow-fx', {
+            schema: { size: { default: 2.2 }, color: { default: '#ffe9a8' } },
+            init() {
+                const T = AFRAME.THREE;
+                const mat = new T.SpriteMaterial({
+                    map: radialTex([[0, 'rgba(255,255,255,1)'], [.35, 'rgba(255,240,190,.55)'], [1, 'rgba(255,220,150,0)']]),
+                    color: new T.Color(this.data.color), blending: T.AdditiveBlending, transparent: true, depthWrite: false
+                });
+                this.spr = new T.Sprite(mat);
+                this.spr.scale.set(this.data.size, this.data.size, 1);
+                this.el.setObject3D('glow', this.spr);
+            },
+            tick(t) {
+                if (!this.spr) return;
+                const k = Math.sin(t / 450);
+                this.spr.material.opacity = 0.7 + 0.25 * k;                              // berdenyut
+                const s = this.data.size * (1 + 0.06 * k);
+                this.spr.scale.set(s, s, 1);
+            }
+        });
+
+        // Dipasang sekali per kartu saat pertama kali terdeteksi
+        function addFx(target) {
+            if (target.querySelector('[snow-fx]')) return;
+            const snow = document.createElement('a-entity');
+            snow.setAttribute('snow-fx', '');
+            target.appendChild(snow);
+
+            const glow = document.createElement('a-entity');
+            glow.setAttribute('glow-fx', '');
+            glow.setAttribute('position', '0 0 0.6');   // tinggi cahaya dari kartu
+            glow.setAttribute('light', 'type: point; color: #fff1c2; intensity: 3; decay: 2');  // menerangi model
+            target.appendChild(glow);
+        }
+    </script>
 
     <script>
         const hint = document.getElementById('hint'), dbg = document.getElementById('dbg'),
@@ -120,6 +215,7 @@
         document.querySelectorAll('.tgt').forEach(el => {
             el.addEventListener('targetFound', () => {
                 card = el.dataset.name; hint.classList.add('off');
+                addFx(el);
                 if (!el.querySelector('a-gltf-model')) {
                     const m = document.createElement('a-gltf-model');
                     m.setAttribute('src', el.dataset.glb);
