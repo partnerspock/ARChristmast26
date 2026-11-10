@@ -70,7 +70,7 @@
       maxTrack: 1 = satu kartu sekali deteksi (lebih ringan). Naikkan kalau mau beberapa kartu sekaligus.
     -->
     <a-scene
-        mindar-image="imageTargetSrc: assets/update.mind; maxTrack: 1; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
+        mindar-image="imageTargetSrc: assets/update.mind; maxTrack: 1; filterMinCF: 0.0005; filterBeta: 50; missTolerance: 10; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
         color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
 
@@ -78,27 +78,30 @@
         <a-entity light="type: ambient; intensity: 1.2"></a-entity>
         <a-entity light="type: directional; intensity: 1.5" position="1 2 3"></a-entity>
 
-        <!-- Satu baris = satu karakter. Atur glb, rotation (data-rot), position (data-pos), scale (data-scale) di sini. -->
+        <!-- Satu baris = satu karakter.
+             data-scale = UKURAN (kecilkan di sini, mis. 0.8 0.8 0.8)
+             data-rot   = rotasi, data-pos = posisi
+             data-anim  = loop (gerak terus) | once (main sekali lalu diam di pose akhir) | none (tanpa animasi) -->
         <a-entity class="tgt" data-name="char1" data-glb="char1/char1.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 0"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" mindar-image-target="targetIndex: 0"></a-entity>
         <a-entity class="tgt" data-name="char2" data-glb="char2/char2.glb" data-rot="45 0 0" data-pos="0 0 0"
-            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 1"></a-entity>
+            data-scale="1.2 1.2 1.2" data-anim="once" mindar-image-target="targetIndex: 1"></a-entity>
         <a-entity class="tgt" data-name="char3" data-glb="char3/char3.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 2"></a-entity>
+            data-scale="0.5 0.5 0.5" data-anim="once" mindar-image-target="targetIndex: 2"></a-entity>
         <a-entity class="tgt" data-name="char4" data-glb="char4/char4.glb" data-rot="45 0 0" data-pos="0 0 0"
-            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 3"></a-entity>
+            data-scale="1.2 1.2 1.2" data-anim="once" mindar-image-target="targetIndex: 3"></a-entity>
         <a-entity class="tgt" data-name="char5" data-glb="char5/char5.glb" data-rot="45 0 0" data-pos="0 0 0"
-            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 4"></a-entity>
+            data-scale="1.2 1.2 1.2" data-anim="once" mindar-image-target="targetIndex: 4"></a-entity>
         <a-entity class="tgt" data-name="char6" data-glb="char6/char6.glb" data-rot="45 0 0" data-pos="0 0 0"
-            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 5"></a-entity>
+            data-scale="1.2 1.2 1.2" data-anim="once" mindar-image-target="targetIndex: 5"></a-entity>
         <a-entity class="tgt" data-name="char7" data-glb="char7/char7.glb" data-rot="45 0 0" data-pos="0 0 0"
-            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 6"></a-entity>
+            data-scale="1.2 1.2 1.2" data-anim="once" mindar-image-target="targetIndex: 6"></a-entity>
         <a-entity class="tgt" data-name="char8" data-glb="char8/char8.glb" data-rot="45 0 0" data-pos="0 0 0"
-            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 7"></a-entity>
+            data-scale="1.2 1.2 1.2" data-anim="once" mindar-image-target="targetIndex: 7"></a-entity>
         <a-entity class="tgt" data-name="char9" data-glb="char9/char9.glb" data-rot="45 0 0" data-pos="0 0 0"
-            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 8"></a-entity>
-        <a-entity class="tgt" data-name="char9" data-glb="char10/char10.glb" data-rot="45 0 0" data-pos="0 0 0"
-            data-scale="2.5 2.5 2.5" mindar-image-target="targetIndex: 9"></a-entity>
+            data-scale="1.2 1.2 1.2" data-anim="once" mindar-image-target="targetIndex: 8"></a-entity>
+        <a-entity class="tgt" data-name="char10" data-glb="char10/char10.glb" data-rot="45 0 0" data-pos="0 0 0"
+            data-scale="1.2 1.2 1.2" data-anim="once" mindar-image-target="targetIndex: 9"></a-entity>
     </a-scene>
 
     <script>
@@ -112,14 +115,24 @@
             return new AFRAME.THREE.CanvasTexture(c);
         }
 
+        // Butiran salju: inti putih + tepi kebiruan, supaya tetap terlihat di latar terang
+        function flakeTex() {
+            const c = document.createElement('canvas'); c.width = c.height = 64;
+            const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 2, 32, 32, 30);
+            g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.6, 'rgba(255,255,255,1)');
+            g.addColorStop(.8, 'rgba(150,190,255,.9)'); g.addColorStop(1, 'rgba(150,190,255,0)');
+            x.fillStyle = g; x.beginPath(); x.arc(32, 32, 30, 0, 6.2832); x.fill();
+            return new AFRAME.THREE.CanvasTexture(c);
+        }
+
         // Salju jatuh ke arah kartu
         AFRAME.registerComponent('snow-fx', {
             schema: {
-                count: { default: 220 },        // jumlah butiran (turunkan kalau HP berat)
+                count: { default: 250 },        // jumlah butiran (turunkan kalau HP berat)
                 w: { default: 1.8 },            // lebar area
                 h: { default: 2.2 },            // tinggi area
                 d: { default: 1.6 },            // tinggi jatuh dari kartu
-                size: { default: 0.04 },        // ukuran butiran
+                size: { default: 0.07 },        // ukuran butiran
                 speed: { default: 0.22 }        // kecepatan jatuh
             },
             init() {
@@ -136,7 +149,7 @@
                 const g = new T.BufferGeometry();
                 g.setAttribute('position', new T.BufferAttribute(pos, 3));
                 const m = new T.PointsMaterial({
-                    size: d.size, map: radialTex([[0, 'rgba(255,255,255,1)'], [.5, 'rgba(255,255,255,.6)'], [1, 'rgba(255,255,255,0)']]),
+                    size: d.size, map: flakeTex(),
                     transparent: true, depthWrite: false
                 });
                 this.pts = new T.Points(g, m); this.pts.frustumCulled = false;
@@ -200,9 +213,17 @@
         const hint = document.getElementById('hint'), dbg = document.getElementById('dbg'),
             scene = document.querySelector('a-scene');
 
-        let cam = 'loading', card = '', glb = '';
-        const show = () => dbg.textContent = 'camera: ' + cam + (card ? ' | card: ' + card : '') + (glb ? ' | GLB: ' + glb : '');
+        let cam = 'loading', card = '', glb = '', mind = 'checking';
+        const show = () => dbg.textContent = 'mind: ' + mind + ' | camera: ' + cam + (card ? ' | card: ' + card : '') + (glb ? ' | GLB: ' + glb : '');
         show();
+
+        // cek file .mind: harus ada dan berukuran besar (bukan halaman 404 yang cuma ~79 byte)
+        fetch('assets/update.mind').then(r => r.arrayBuffer().then(b => {
+            mind = !r.ok ? 'NOT FOUND (' + r.status + ') - cek path/nama file .mind'
+                : b.byteLength < 1000 ? 'INVALID (' + b.byteLength + ' byte)'
+                    : 'OK (' + Math.round(b.byteLength / 1024) + ' KB)';
+            show();
+        })).catch(() => { mind = 'GAGAL diambil'; show(); });
 
         scene.addEventListener('arReady', () => { cam = 'OK'; hint.textContent = 'Point the camera at a card'; show(); });
         scene.addEventListener('arError', () => {
@@ -222,7 +243,9 @@
                     m.setAttribute('rotation', el.dataset.rot);
                     m.setAttribute('position', el.dataset.pos);
                     m.setAttribute('scale', el.dataset.scale);
-                    m.setAttribute('animation-mixer', '');
+                    const anim = el.dataset.anim || 'loop';
+                    if (anim === 'loop') m.setAttribute('animation-mixer', '');
+                    else if (anim === 'once') m.setAttribute('animation-mixer', 'loop: once; clampWhenFinished: true');
                     m.addEventListener('model-loaded', () => { glb = 'OK'; show(); });
                     m.addEventListener('model-error', () => { glb = 'FAILED (cek path ' + el.dataset.glb + ')'; show(); });
                     glb = 'loading';
