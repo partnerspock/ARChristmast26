@@ -129,16 +129,16 @@
         // Setting partikel (dipakai SEMUA mode). Semua angka RELATIF KE LAYAR HP, jadi pasti memenuhi layar.
         const PARTICLE = {
             count: 60,              // jumlah butiran (turunkan ke 80 kalau HP berat, naikkan kalau mau lebih ramai)
-            sizeMin: 0.015,         // butiran paling kecil (0.015 = 1.5% tinggi layar)
-            sizeMax: 0.09,          // butiran paling besar
+            sizeMin: 0.005,         // butiran paling kecil (0.015 = 1.5% tinggi layar)
+            sizeMax: 0.05,          // butiran paling besar
             sizeBias: 1.6,          // 1 = rata, makin besar = makin banyak yang kecil, sedikit yang besar
             speedMin: 0.04,         // kecepatan jatuh paling lambat (tinggi layar per detik)
             speedMax: 0.13,         // kecepatan jatuh paling cepat (butiran besar cenderung lebih cepat)
             flutter: 0.03,          // goyangan kiri-kanan (lebar layar)
             spin: 0.9,              // kecepatan berputar (0 = tidak berputar)
-            fade: 0.12,             // bagian atas/bawah layar untuk fade in/out (0-0.5)
+            fade: 0.5,             // bagian atas/bawah layar untuk fade in/out (0-0.5)
             margin: 0.1,            // butiran mulai sedikit di atas layar dan hilang sedikit di bawah layar
-            opacityMin: 0.6,        // transparansi terendah
+            opacityMin: 0.1,        // transparansi terendah
             opacityMax: 1           // transparansi tertinggi
         };
         const FXLOG = { msg: '' };
