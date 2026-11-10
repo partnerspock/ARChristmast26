@@ -82,7 +82,7 @@
              data-scale = UKURAN (kecilkan di sini, mis. 0.8 0.8 0.8)
              data-rot   = rotasi, data-pos = posisi
              data-anim  = loop (gerak terus) | once (main sekali lalu diam di pose akhir) | none (tanpa animasi)
-             data-fx    = off (tanpa partikel) | snow | night | wood  (mode partikel jatuh, gambar diatur di FX_MODES) -->
+             data-fx    = off (tanpa partikel) | snow | night | wood  (hanya beda GAMBAR, lihat FX_MODES) -->
         <a-entity class="tgt" data-name="char1" data-glb="char1/char1.glb" data-rot="0 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 0"></a-entity>
         <a-entity class="tgt" data-name="char2" data-glb="char2/char2.glb" data-rot="0 0 0" data-pos="0 0 0"
@@ -121,19 +121,33 @@
         const FX = {
             glowSize: 0.05,           // UKURAN CAHAYA
             glowOpacity: 0.05,        // terang cahaya (0-1)
-            glowHeight: 1,           // tinggi cahaya dari kartu
+            glowHeight: 1,            // tinggi cahaya dari kartu
             lightIntensity: 0.05      // seberapa terang model tersorot
         };
 
-        // Mode partikel: dipilih per karakter lewat data-fx="snow|night|wood" (atau off).
-        // Semua mode sama dasarnya: muncul dari atas layar lalu jatuh ke bawah layar. Gambar = PNG milikmu.
-        //   img     = file gambar partikel      count  = jumlah butiran (turunkan kalau HP berat)
-        //   size    = ukuran butiran            area   = [lebar, tinggi, kedalaman] kotak jatuh di sekitar kartu (arah layar)
-        //   speed   = kecepatan jatuh           flutter = goyangan kiri-kanan
+        // Gambar per mode: HANYA ini yang beda antar mode. Animasi & setting sama semua.
+        // Untuk ganti aset, cukup ubah nama file PNG di sini.
         const FX_MODES = {
-            snow: { img: 'assets/snowflake.png', count: 40, size: 0.1, area: [1, 3, 0.8], speed: 0.13, flutter: 0.12 },
-            night: { img: 'assets/night.png', count: 30, size: 0.2, area: [1.5, 2.5, 0.8], speed: 0.23, flutter: 0.12 },   // <- ganti nama file
-            wood: { img: 'assets/wood.png', count: 20, size: 0.3, area: [2, 2, 0.8], speed: 0.33, flutter: 0.12 }    // <- ganti nama file
+            snow: { img: 'assets/snowflake.png' },
+            night: { img: 'assets/night.png' },   // <- ganti nama file
+            wood: { img: 'assets/wood.png' }      // <- ganti nama file
+        };
+
+        // Setting partikel (dipakai SEMUA mode). Satuan: lebar kartu = 1.
+        const PARTICLE = {
+            count: 60,              // jumlah butiran (turunkan ke 40 kalau HP berat)
+            sizeMin: 0.04,          // butiran paling kecil
+            sizeMax: 0.22,          // butiran paling besar
+            sizeBias: 2.2,          // 1 = rata, makin besar = makin banyak yang kecil, sedikit yang besar
+            area: [3.2, 3.2, 1.6],  // [lebar, tinggi, kedalaman] area sebar: besarkan = makin menyebar
+            centerY: 0.3,           // geser area ke atas (+) / bawah (-) dari pusat kartu
+            speedMin: 0.05,         // kecepatan jatuh paling lambat
+            speedMax: 0.14,         // kecepatan jatuh paling cepat (butiran besar cenderung lebih cepat)
+            flutter: 0.15,          // goyangan kiri-kanan
+            spin: 0.6,              // kecepatan berputar (0 = tidak berputar)
+            fade: 0.2,              // bagian atas/bawah area untuk fade in/out (0-0.5)
+            opacityMin: 0.6,        // transparansi terendah
+            opacityMax: 1           // transparansi tertinggi
         };
         const FXLOG = { msg: '' };
 
@@ -204,21 +218,34 @@
         AFRAME.registerComponent('fall-fx', {
             schema: { mode: { default: 'snow' } },
             init() {
-                const T = AFRAME.THREE, M = FX_MODES[this.data.mode];
-                if (!M) return;
-                this.M = M;
+                const T = AFRAME.THREE;
+                if (!FX_MODES[this.data.mode]) return;
                 this.inv = new T.Quaternion(); this.tmp = new T.Vector3();
                 loadTex(this.data.mode).then(tex => {
+                    const P = PARTICLE, A = P.area;
                     const img = tex.image, aspect = (img && img.width && img.height) ? img.width / img.height : 1;
-                    const mat = new T.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
-                    const A = M.area, group = new T.Group(), flakes = [];
-                    for (let i = 0; i < M.count; i++) {
-                        const sp = new T.Sprite(mat), s = M.size * (0.6 + Math.random() * 0.8);
+                    const baseMat = new T.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+                    const group = new T.Group(), flakes = [];
+                    const rnd = (a, b) => a + Math.random() * (b - a);
+
+                    for (let i = 0; i < P.count; i++) {
+                        // r kecil = butiran kecil; pow bikin lebih banyak yang kecil, sedikit yang besar
+                        const r = Math.pow(Math.random(), P.sizeBias);
+                        const s = P.sizeMin + (P.sizeMax - P.sizeMin) * r;
+                        const mat = baseMat.clone();                    // material sendiri agar bisa fade per butiran
+                        const sp = new T.Sprite(mat);
                         sp.scale.set(s * aspect, s, 1);
-                        // posisi disimpan dalam arah LAYAR: x = kanan, y = atas, z = ke arah kamera (pusat = kartu)
+                        mat.rotation = Math.random() * 6.283;
                         flakes.push({
-                            sp, s, bx: (Math.random() - .5) * A[0], y: (Math.random() - .5) * A[1], bz: Math.random() * A[2],
-                            v: M.speed * (.6 + Math.random() * .8), ph: Math.random() * 6.283, f: .6 + Math.random() * .8
+                            sp, mat,
+                            bx: rnd(-A[0] / 2, A[0] / 2),
+                            y: P.centerY + rnd(-A[1] / 2, A[1] / 2),    // tersebar merata di tinggi area sejak awal
+                            bz: rnd(-A[2] * 0.3, A[2] * 0.7),
+                            v: P.speedMin + (P.speedMax - P.speedMin) * (0.3 * Math.random() + 0.7 * r),
+                            ph: Math.random() * 6.283, f: rnd(0.5, 1.2),
+                            sw: 0.5 + r,                                // butiran besar goyang lebih lebar
+                            spin: (Math.random() - 0.5) * 2 * P.spin,
+                            op: rnd(P.opacityMin, P.opacityMax)
                         });
                         group.add(sp);
                     }
@@ -229,16 +256,25 @@
             tick(t, dt) {
                 if (!this.flakes) return;
                 dt = Math.min(dt, 50) / 1000;
-                const M = this.M, A = M.area, ts = t / 1000, par = this.el.object3D.parent;
-                this.inv.copy(par.quaternion).invert();          // putar balik arah kartu -> arah layar
+                const P = PARTICLE, A = P.area, ts = t / 1000, par = this.el.object3D.parent;
+                const top = P.centerY + A[1] / 2, bottom = P.centerY - A[1] / 2, H = A[1];
+                this.inv.copy(par.quaternion).invert();     // putar balik arah kartu -> arah layar
                 const sc = par.scale.x || 1;
                 for (const f of this.flakes) {
                     const a = ts * f.f + f.ph;
-                    f.y -= f.v * dt;                              // turun ke bawah layar
-                    if (f.y < -A[1] / 2) {                        // keluar di bawah -> muncul lagi dari atas
-                        f.y = A[1] / 2; f.bx = (Math.random() - .5) * A[0]; f.bz = Math.random() * A[2];
+                    f.y -= f.v * dt;
+                    if (f.y < bottom) {                      // keluar di bawah -> muncul lagi dari atas, posisi acak
+                        f.y = top;
+                        f.bx = (Math.random() - .5) * A[0];
+                        f.bz = -A[2] * 0.3 + Math.random() * A[2];
                     }
-                    this.tmp.set(f.bx + Math.sin(a) * M.flutter, f.y, f.bz + Math.sin(a * 2) * M.flutter * 0.5)
+                    // fade in di atas, fade out di bawah
+                    const u = (f.y - bottom) / H;
+                    const edge = Math.min(1, u / P.fade, (1 - u) / P.fade);
+                    f.mat.opacity = f.op * Math.max(0, edge);
+                    f.mat.rotation += f.spin * dt;
+                    const fl = P.flutter * f.sw;
+                    this.tmp.set(f.bx + Math.sin(a) * fl, f.y, f.bz + Math.sin(a * 2) * fl * 0.5)
                         .applyQuaternion(this.inv).divideScalar(sc);
                     f.sp.position.copy(this.tmp);
                 }
