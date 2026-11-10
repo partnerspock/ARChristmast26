@@ -133,19 +133,18 @@
             wood: { img: 'assets/wood.png' }      // <- ganti nama file
         };
 
-        // Setting partikel (dipakai SEMUA mode). Satuan: lebar kartu = 1.
+        // Setting partikel (dipakai SEMUA mode). Semua angka RELATIF KE LAYAR HP, jadi pasti memenuhi layar.
         const PARTICLE = {
             count: 120,             // jumlah butiran (turunkan ke 80 kalau HP berat, naikkan kalau mau lebih ramai)
-            sizeMin: 0.07,          // butiran paling kecil
-            sizeMax: 0.35,          // butiran paling besar
-            sizeBias: 1.5,          // 1 = rata, makin besar = makin banyak yang kecil, sedikit yang besar
-            area: [2.4, 2.8, 1.2],  // [lebar, tinggi, kedalaman] area sebar: besarkan = makin menyebar tapi makin jarang
-            centerY: 0.3,           // geser area ke atas (+) / bawah (-) dari pusat kartu
-            speedMin: 0.05,         // kecepatan jatuh paling lambat
-            speedMax: 0.14,         // kecepatan jatuh paling cepat (butiran besar cenderung lebih cepat)
-            flutter: 0.15,          // goyangan kiri-kanan
+            sizeMin: 0.015,         // butiran paling kecil (0.015 = 1.5% tinggi layar)
+            sizeMax: 0.09,          // butiran paling besar
+            sizeBias: 1.6,          // 1 = rata, makin besar = makin banyak yang kecil, sedikit yang besar
+            speedMin: 0.04,         // kecepatan jatuh paling lambat (tinggi layar per detik)
+            speedMax: 0.13,         // kecepatan jatuh paling cepat (butiran besar cenderung lebih cepat)
+            flutter: 0.03,          // goyangan kiri-kanan (lebar layar)
             spin: 0.6,              // kecepatan berputar (0 = tidak berputar)
-            fade: 0.2,              // bagian atas/bawah area untuk fade in/out (0-0.5)
+            fade: 0.12,             // bagian atas/bawah layar untuk fade in/out (0-0.5)
+            margin: 0.1,            // butiran mulai sedikit di atas layar dan hilang sedikit di bawah layar
             opacityMin: 0.6,        // transparansi terendah
             opacityMax: 1           // transparansi tertinggi
         };
@@ -215,68 +214,69 @@
             });
         }
 
+        // Partikel dipasang di KAMERA (overlay layar penuh), muncul hanya saat kartu terdeteksi.
         AFRAME.registerComponent('fall-fx', {
             schema: { mode: { default: 'snow' } },
             init() {
-                const T = AFRAME.THREE;
                 if (!FX_MODES[this.data.mode]) return;
-                this.inv = new T.Quaternion(); this.tmp = new T.Vector3();
+                this.cam = this.el.sceneEl.camera;
                 loadTex(this.data.mode).then(tex => {
-                    const P = PARTICLE, A = P.area;
-                    const img = tex.image, aspect = (img && img.width && img.height) ? img.width / img.height : 1;
-                    const baseMat = new T.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+                    if (this.removed || !this.cam) return;
+                    const T = AFRAME.THREE, P = PARTICLE;
+                    const img = tex.image;
+                    this.aspect = (img && img.width && img.height) ? img.width / img.height : 1;
+                    const baseMat = new T.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false });
                     const group = new T.Group(), flakes = [];
                     const rnd = (a, b) => a + Math.random() * (b - a);
-
                     for (let i = 0; i < P.count; i++) {
-                        // r kecil = butiran kecil; pow bikin lebih banyak yang kecil, sedikit yang besar
-                        const r = Math.pow(Math.random(), P.sizeBias);
-                        const s = P.sizeMin + (P.sizeMax - P.sizeMin) * r;
-                        const mat = baseMat.clone();                    // material sendiri agar bisa fade per butiran
-                        const sp = new T.Sprite(mat);
-                        sp.scale.set(s * aspect, s, 1);
+                        const r = Math.pow(Math.random(), P.sizeBias);   // r kecil = butiran kecil
+                        const mat = baseMat.clone();
                         mat.rotation = Math.random() * 6.283;
+                        const sp = new T.Sprite(mat);
+                        sp.renderOrder = 999; sp.frustumCulled = false;
                         flakes.push({
                             sp, mat,
-                            bx: rnd(-A[0] / 2, A[0] / 2),
-                            y: P.centerY + rnd(-A[1] / 2, A[1] / 2),    // tersebar merata di tinggi area sejak awal
-                            bz: rnd(-A[2] * 0.3, A[2] * 0.7),
+                            u: Math.random(),                              // posisi kiri-kanan layar (0-1)
+                            y: rnd(-P.margin, 1 + P.margin),               // posisi tinggi layar (1 = atas), tersebar sejak awal
+                            s: P.sizeMin + (P.sizeMax - P.sizeMin) * r,    // ukuran (fraksi tinggi layar)
                             v: P.speedMin + (P.speedMax - P.speedMin) * (0.3 * Math.random() + 0.7 * r),
                             ph: Math.random() * 6.283, f: rnd(0.5, 1.2),
-                            sw: 0.5 + r,                                // butiran besar goyang lebih lebar
+                            sw: 0.5 + r,
                             spin: (Math.random() - 0.5) * 2 * P.spin,
                             op: rnd(P.opacityMin, P.opacityMax)
                         });
                         group.add(sp);
                     }
-                    this.flakes = flakes;
-                    this.el.setObject3D('fall', group);
+                    this.flakes = flakes; this.group = group;
+                    group.visible = false;
+                    this.cam.add(group);
                 });
+            },
+            remove() {
+                this.removed = true;
+                if (this.group && this.cam) this.cam.remove(this.group);
             },
             tick(t, dt) {
                 if (!this.flakes) return;
+                const par = this.el.object3D.parent;
+                this.group.visible = par.visible;
+                if (!par.visible) return;
+                const d = par.position.length();               // jarak kartu dari kamera
+                const e = this.cam.projectionMatrix.elements;
+                if (!(d > 0) || !e[0] || !e[5]) return;
+                const hw = Math.abs(d / e[0]), hh = Math.abs(d / e[5]);   // setengah lebar/tinggi layar di jarak itu
                 dt = Math.min(dt, 50) / 1000;
-                const P = PARTICLE, A = P.area, ts = t / 1000, par = this.el.object3D.parent;
-                const top = P.centerY + A[1] / 2, bottom = P.centerY - A[1] / 2, H = A[1];
-                this.inv.copy(par.quaternion).invert();     // putar balik arah kartu -> arah layar
-                const sc = par.scale.x || 1;
+                const P = PARTICLE, m = P.margin, range = 1 + 2 * m, ts = t / 1000;
                 for (const f of this.flakes) {
-                    const a = ts * f.f + f.ph;
                     f.y -= f.v * dt;
-                    if (f.y < bottom) {                      // keluar di bawah -> muncul lagi dari atas, posisi acak
-                        f.y = top;
-                        f.bx = (Math.random() - .5) * A[0];
-                        f.bz = -A[2] * 0.3 + Math.random() * A[2];
-                    }
-                    // fade in di atas, fade out di bawah
-                    const u = (f.y - bottom) / H;
-                    const edge = Math.min(1, u / P.fade, (1 - u) / P.fade);
-                    f.mat.opacity = f.op * Math.max(0, edge);
+                    if (f.y < -m) { f.y = 1 + m; f.u = Math.random(); }
+                    const w = (f.y + m) / range;
+                    f.mat.opacity = f.op * Math.max(0, Math.min(1, w / P.fade, (1 - w) / P.fade));
                     f.mat.rotation += f.spin * dt;
-                    const fl = P.flutter * f.sw;
-                    this.tmp.set(f.bx + Math.sin(a) * fl, f.y, f.bz + Math.sin(a * 2) * fl * 0.5)
-                        .applyQuaternion(this.inv).divideScalar(sc);
-                    f.sp.position.copy(this.tmp);
+                    const u = f.u + Math.sin(ts * f.f + f.ph) * P.flutter * f.sw;
+                    f.sp.position.set((u - 0.5) * 2 * hw, (f.y - 0.5) * 2 * hh, -d);
+                    const h = f.s * 2 * hh;
+                    f.sp.scale.set(h * this.aspect, h, 1);
                 }
             }
         });
