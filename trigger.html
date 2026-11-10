@@ -117,14 +117,6 @@
             range: 0.05     // batas "gerakan kecil" dianggap goyangan
         };
 
-        // Cahaya (glow) untuk semua karakter
-        const FX = {
-            glowSize: 0.01,           // UKURAN CAHAYA
-            glowOpacity: 0.01,        // terang cahaya (0-1)
-            glowHeight: 0.01,            // tinggi cahaya dari kartu
-            lightIntensity: 0.01      // seberapa terang model tersorot
-        };
-
         // Gambar per mode: HANYA ini yang beda antar mode. Animasi & setting sama semua.
         // Untuk ganti aset, cukup ubah nama file PNG di sini.
         const FX_MODES = {
@@ -135,7 +127,7 @@
 
         // Setting partikel (dipakai SEMUA mode). Semua angka RELATIF KE LAYAR HP, jadi pasti memenuhi layar.
         const PARTICLE = {
-            count: 60,             // jumlah butiran (turunkan ke 80 kalau HP berat, naikkan kalau mau lebih ramai)
+            count: 60,              // jumlah butiran (turunkan ke 80 kalau HP berat, naikkan kalau mau lebih ramai)
             sizeMin: 0.015,         // butiran paling kecil (0.015 = 1.5% tinggi layar)
             sizeMax: 0.09,          // butiran paling besar
             sizeBias: 1.6,          // 1 = rata, makin besar = makin banyak yang kecil, sedikit yang besar
@@ -149,14 +141,6 @@
             opacityMax: 1           // transparansi tertinggi
         };
         const FXLOG = { msg: '' };
-
-        function radialTex(stops) {
-            const c = document.createElement('canvas'); c.width = c.height = 128;
-            const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
-            stops.forEach(s => g.addColorStop(s[0], s[1]));
-            x.fillStyle = g; x.fillRect(0, 0, 128, 128);
-            return new AFRAME.THREE.CanvasTexture(c);
-        }
 
         function flakeTex() {
             const c = document.createElement('canvas'); c.width = c.height = 64;
@@ -281,25 +265,7 @@
             }
         });
 
-        // Cahaya lembut berdenyut
-        AFRAME.registerComponent('glow-fx', {
-            init() {
-                const T = AFRAME.THREE;
-                this.spr = new T.Sprite(new T.SpriteMaterial({
-                    map: radialTex([[0, 'rgba(255,255,255,1)'], [.35, 'rgba(255,240,190,.55)'], [1, 'rgba(255,220,150,0)']]),
-                    color: new T.Color('#ffe9a8'), blending: T.AdditiveBlending, transparent: true, depthWrite: false
-                }));
-                this.el.setObject3D('glow', this.spr);
-            },
-            tick(t) {
-                if (!this.spr) return;
-                const k = Math.sin(t / 450), s = FX.glowSize * (1 + 0.06 * k);
-                this.spr.material.opacity = Math.min(1, FX.glowOpacity + 0.2 * k);
-                this.spr.scale.set(s, s, 1);
-            }
-        });
-
-        // Dipasang di holder: partikel sesuai data-fx (snow/night/wood), cahaya untuk semua
+        // Dipasang di holder: partikel sesuai data-fx (snow/night/wood)
         function addFx(target, holder) {
             const mode = target.dataset.fx;
             if (FX_MODES[mode]) {
@@ -307,11 +273,6 @@
                 fx.setAttribute('fall-fx', 'mode: ' + mode);
                 holder.appendChild(fx);
             }
-            const glow = document.createElement('a-entity');
-            glow.setAttribute('glow-fx', '');
-            glow.setAttribute('position', '0 0 ' + FX.glowHeight);
-            glow.setAttribute('light', 'type: point; color: #fff1c2; intensity: ' + FX.lightIntensity + '; decay: 2');
-            holder.appendChild(glow);
         }
     </script>
 
