@@ -82,27 +82,27 @@
              data-scale = UKURAN (kecilkan di sini, mis. 0.8 0.8 0.8)
              data-rot   = rotasi, data-pos = posisi
              data-anim  = loop (gerak terus) | once (main sekali lalu diam di pose akhir) | none (tanpa animasi)
-             data-snow  = on (ada efek salju) | off (tanpa salju) -->
+             data-fx    = off (tanpa partikel) | snow | night | wood  (mode partikel jatuh, gambar diatur di FX_MODES) -->
         <a-entity class="tgt" data-name="char1" data-glb="char1/char1.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-snow="off" mindar-image-target="targetIndex: 0"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 0"></a-entity>
         <a-entity class="tgt" data-name="char2" data-glb="char2/char2.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-snow="off" mindar-image-target="targetIndex: 1"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 1"></a-entity>
         <a-entity class="tgt" data-name="char3" data-glb="char3/char3.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-snow="off" mindar-image-target="targetIndex: 2"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 2"></a-entity>
         <a-entity class="tgt" data-name="char4" data-glb="char4/char4.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-snow="off" mindar-image-target="targetIndex: 3"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 3"></a-entity>
         <a-entity class="tgt" data-name="char5" data-glb="char5/char5.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-snow="off" mindar-image-target="targetIndex: 4"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 4"></a-entity>
         <a-entity class="tgt" data-name="char6" data-glb="char6/char6.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-snow="off" mindar-image-target="targetIndex: 5"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 5"></a-entity>
         <a-entity class="tgt" data-name="char7" data-glb="char7/char7.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-snow="off" mindar-image-target="targetIndex: 6"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 6"></a-entity>
         <a-entity class="tgt" data-name="char8" data-glb="char8/char8.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-snow="off" mindar-image-target="targetIndex: 7"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 7"></a-entity>
         <a-entity class="tgt" data-name="char9" data-glb="char9/char9.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-snow="off" mindar-image-target="targetIndex: 8"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="off" mindar-image-target="targetIndex: 8"></a-entity>
         <a-entity class="tgt" data-name="char10" data-glb="char10/char10.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-snow="on" mindar-image-target="targetIndex: 9"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="snow" mindar-image-target="targetIndex: 9"></a-entity>
     </a-scene>
 
     <script>
@@ -117,17 +117,25 @@
             range: 0.05     // batas "gerakan kecil" dianggap goyangan
         };
 
+        // Cahaya (glow) untuk semua karakter
         const FX = {
-            snowCount: 100,          // jumlah butiran (50-150, turunkan kalau HP berat)
-            flake: 0.8,              // ukuran butiran rata-rata
-            area: [0.6, 0.9, 0.4],   // lebar, tinggi, dan tinggi jatuh dari kartu
-            speed: 0.43,             // kecepatan jatuh
-            flutter: 0.12,           // goyangan kiri-kanan
-            glowSize: 0.4,           // UKURAN CAHAYA
-            glowOpacity: 0.1,       // terang cahaya (0-1)
+            glowSize: 0.2,           // UKURAN CAHAYA
+            glowOpacity: 0.1,        // terang cahaya (0-1)
             glowHeight: 1,           // tinggi cahaya dari kartu
-            lightIntensity: 0.5        // seberapa terang model tersorot
+            lightIntensity: 0.2      // seberapa terang model tersorot
         };
+
+        // Mode partikel: dipilih per karakter lewat data-fx="snow|night|wood" (atau off).
+        // Semua mode sama dasarnya: muncul dari atas lalu jatuh ke bawah. Gambar = PNG milikmu.
+        //   img     = file gambar partikel      count  = jumlah butiran (turunkan kalau HP berat)
+        //   size    = ukuran butiran            area   = lebar, tinggi, tinggi jatuh dari kartu
+        //   speed   = kecepatan jatuh           flutter = goyangan kiri-kanan
+        const FX_MODES = {
+            snow: { img: 'assets/snowflake.png', count: 40, size: 0.2, area: [0.6, 0.9, 0.4], speed: 0.43, flutter: 0.12 },
+            night: { img: 'assets/night.png', count: 40, size: 0.2, area: [0.6, 0.9, 0.4], speed: 0.43, flutter: 0.12 },   // <- ganti nama file
+            wood: { img: 'assets/wood.png', count: 40, size: 0.2, area: [0.6, 0.9, 0.4], speed: 0.43, flutter: 0.12 }    // <- ganti nama file
+        };
+        const FXLOG = { msg: '' };
 
         function radialTex(stops) {
             const c = document.createElement('canvas'); c.width = c.height = 128;
@@ -176,32 +184,55 @@
             }
         });
 
-        // Salju: sprite kecil, jatuh pelan ke kartu, goyang pola angka delapan, ulang dari atas
-        AFRAME.registerComponent('snow-fx', {
+        // Partikel jatuh dari atas ke bawah memakai PNG sendiri
+        const texCache = {};
+        function loadTex(mode) {
+            if (texCache[mode]) return texCache[mode];
+            const url = FX_MODES[mode].img, T = AFRAME.THREE;
+            return texCache[mode] = new Promise(res => {
+                new T.TextureLoader().load(url, t => {
+                    if (T.SRGBColorSpace) t.colorSpace = T.SRGBColorSpace;
+                    res(t);
+                }, undefined, () => {
+                    FXLOG.msg = 'fx FAILED (' + url + ')';
+                    if (window.refreshDbg) window.refreshDbg();
+                    res(flakeTex());   // gambar cadangan kalau PNG tidak ketemu
+                });
+            });
+        }
+
+        AFRAME.registerComponent('fall-fx', {
+            schema: { mode: { default: 'snow' } },
             init() {
-                const T = AFRAME.THREE, A = FX.area;
-                const mat = new T.SpriteMaterial({ map: flakeTex(), transparent: true, depthWrite: false });
-                this.group = new T.Group(); this.flakes = [];
-                for (let i = 0; i < FX.snowCount; i++) {
-                    const sp = new T.Sprite(mat), s = FX.flake * (0.6 + Math.random() * 0.8);
-                    sp.scale.set(s, s, 1);
-                    const bx = (Math.random() - .5) * A[0], by = (Math.random() - .5) * A[1];
-                    sp.position.set(bx, by, Math.random() * A[2]);
-                    this.flakes.push({ sp, bx, by, v: FX.speed * (.6 + Math.random() * .8), ph: Math.random() * 6.283, f: .6 + Math.random() * .8 });
-                    this.group.add(sp);
-                }
-                this.el.setObject3D('snow', this.group);
+                const T = AFRAME.THREE, M = FX_MODES[this.data.mode];
+                if (!M) return;
+                this.M = M;
+                loadTex(this.data.mode).then(tex => {
+                    const img = tex.image, aspect = (img && img.width && img.height) ? img.width / img.height : 1;
+                    const mat = new T.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+                    const A = M.area, group = new T.Group(), flakes = [];
+                    for (let i = 0; i < M.count; i++) {
+                        const sp = new T.Sprite(mat), s = M.size * (0.6 + Math.random() * 0.8);
+                        sp.scale.set(s * aspect, s, 1);
+                        const bx = (Math.random() - .5) * A[0], by = (Math.random() - .5) * A[1];
+                        sp.position.set(bx, by, Math.random() * A[2]);
+                        flakes.push({ sp, bx, by, v: M.speed * (.6 + Math.random() * .8), ph: Math.random() * 6.283, f: .6 + Math.random() * .8 });
+                        group.add(sp);
+                    }
+                    this.flakes = flakes;
+                    this.el.setObject3D('fall', group);
+                });
             },
             tick(t, dt) {
                 if (!this.flakes) return;
                 dt = Math.min(dt, 50) / 1000;
-                const A = FX.area, ts = t / 1000;
+                const M = this.M, A = M.area, ts = t / 1000;
                 for (const f of this.flakes) {
                     const p = f.sp.position, a = ts * f.f + f.ph;
-                    p.z -= f.v * dt;
-                    p.x = f.bx + Math.sin(a) * FX.flutter;
-                    p.y = f.by + Math.sin(a * 2) * FX.flutter * 0.5;
-                    if (p.z < 0) { p.z = A[2]; f.bx = (Math.random() - .5) * A[0]; f.by = (Math.random() - .5) * A[1]; }
+                    p.z -= f.v * dt;                                   // jatuh ke bawah
+                    p.x = f.bx + Math.sin(a) * M.flutter;
+                    p.y = f.by + Math.sin(a * 2) * M.flutter * 0.5;
+                    if (p.z < 0) { p.z = A[2]; f.bx = (Math.random() - .5) * A[0]; f.by = (Math.random() - .5) * A[1]; }   // ulang dari atas
                 }
             }
         });
@@ -224,12 +255,13 @@
             }
         });
 
-        // Dipasang di holder: salju hanya kalau data-snow="on", cahaya untuk semua
+        // Dipasang di holder: partikel sesuai data-fx (snow/night/wood), cahaya untuk semua
         function addFx(target, holder) {
-            if (target.dataset.snow === 'on') {
-                const snow = document.createElement('a-entity');
-                snow.setAttribute('snow-fx', '');
-                holder.appendChild(snow);
+            const mode = target.dataset.fx;
+            if (FX_MODES[mode]) {
+                const fx = document.createElement('a-entity');
+                fx.setAttribute('fall-fx', 'mode: ' + mode);
+                holder.appendChild(fx);
             }
             const glow = document.createElement('a-entity');
             glow.setAttribute('glow-fx', '');
@@ -251,9 +283,10 @@
         const show = () => {
             if (!DEBUG) return;
             dbg.textContent = 'mind: ' + mind + ' | camera: ' + cam + (card ? ' | card: ' + card : '') +
-                (glb ? ' | GLB: ' + glb : '') + ' | song: ' + songMsg;
+                (glb ? ' | GLB: ' + glb : '') + ' | song: ' + songMsg + (FXLOG.msg ? ' | ' + FXLOG.msg : '');
         };
         show();
+        window.refreshDbg = show;
 
         // cek file .mind (hanya saat DEBUG): harus ada dan berukuran besar, bukan halaman 404 kecil
         if (DEBUG) {
@@ -268,10 +301,10 @@
         // ===== LAGU: 1 lagu, autoplay saat kartu spawn, fade in/out, loop crossfade =====
         const SONG = {
             src: 'assets/song.mp3',   // <- GANTI ke nama file lagumu di folder assets
-            volume: 0.7,              // 0 - 1
-            fadeIn: 2,                // detik: fade in saat kartu terdeteksi
-            fadeOut: 1.5,             // detik: fade out saat kartu hilang
-            crossfade: 9              // detik: tumpang tindih akhir lagu dengan awal lagu berikutnya
+            volume: 0.9,              // 0 - 1
+            fadeIn: 1,                // detik: fade in saat kartu terdeteksi
+            fadeOut: 1,               // detik: fade out saat kartu hilang
+            crossfade: 2              // detik: tumpang tindih akhir lagu dengan awal lagu berikutnya
         };
 
         let ctx = null, master = null, buf = null, started = false, wantSong = false;
