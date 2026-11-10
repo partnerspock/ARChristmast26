@@ -83,11 +83,11 @@
              data-rot   = rotasi, data-pos = posisi
              data-anim  = loop (gerak terus) | once (main sekali lalu diam di pose akhir) | none (tanpa animasi) -->
         <a-entity class="tgt" data-name="char1" data-glb="char1/char1.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" mindar-image-target="targetIndex: 0"></a-entity>
+            data-scale="1 1 1" data-anim="once" mindar-image-target="targetIndex: 0"></a-entity>
         <a-entity class="tgt" data-name="char2" data-glb="char2/char2.glb" data-rot="45 0 0" data-pos="0 0 0"
-            data-scale="1.2 1.2 1.2" data-anim="once" mindar-image-target="targetIndex: 1"></a-entity>
+            data-scale="1 1 1" data-anim="once" mindar-image-target="targetIndex: 1"></a-entity>
         <a-entity class="tgt" data-name="char3" data-glb="char3/char3.glb" data-rot="0 0 0" data-pos="0 0 0"
-            data-scale="0.5 0.5 0.5" data-anim="once" mindar-image-target="targetIndex: 2"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="once" mindar-image-target="targetIndex: 2"></a-entity>
         <a-entity class="tgt" data-name="char4" data-glb="char4/char4.glb" data-rot="45 0 0" data-pos="0 0 0"
             data-scale="1.2 1.2 1.2" data-anim="once" mindar-image-target="targetIndex: 3"></a-entity>
         <a-entity class="tgt" data-name="char5" data-glb="char5/char5.glb" data-rot="45 0 0" data-pos="0 0 0"
@@ -105,8 +105,20 @@
     </a-scene>
 
     <script>
-        // ===== EFEK SALJU + CAHAYA (tanpa library tambahan, tanpa ubah GLB) =====
-        // Satuan: lebar kartu = 1 unit, sumbu Z = tegak lurus kartu (naik dari permukaan kartu).
+        // ===== EFEK SALJU + CAHAYA: semua pengaturan ada di sini =====
+        // Satuan: lebar kartu = 1 unit. Sumbu Z = tegak lurus kartu (naik dari permukaan kartu).
+        const FX = {
+            snowCount: 150,          // jumlah butiran (50-150, turunkan kalau HP berat)
+            flake: 0.9,             // ukuran butiran rata-rata (naikkan kalau kurang kelihatan)
+            area: [1.6, 2.0, 1.4],   // lebar, tinggi, dan tinggi jatuh dari kartu
+            speed: 0.18,             // kecepatan jatuh
+            flutter: 0.12,           // goyangan kiri-kanan
+            glowSize: 0.7,           // UKURAN CAHAYA (kecilkan/besarkan di sini)
+            glowOpacity: 0.55,       // terang cahaya (0-1)
+            glowHeight: 1,         // tinggi cahaya dari kartu
+            lightIntensity: 1        // seberapa terang model tersorot
+        };
+
         function radialTex(stops) {
             const c = document.createElement('canvas'); c.width = c.height = 128;
             const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
@@ -115,7 +127,7 @@
             return new AFRAME.THREE.CanvasTexture(c);
         }
 
-        // Butiran salju: inti putih + tepi kebiruan, supaya tetap terlihat di latar terang
+        // Butiran: inti putih + tepi kebiruan, supaya terlihat di latar terang
         function flakeTex() {
             const c = document.createElement('canvas'); c.width = c.height = 64;
             const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 2, 32, 32, 30);
@@ -125,71 +137,50 @@
             return new AFRAME.THREE.CanvasTexture(c);
         }
 
-        // Salju jatuh ke arah kartu
+        // Salju: sprite kecil, jatuh pelan ke kartu, goyang pola angka delapan, ulang dari atas
         AFRAME.registerComponent('snow-fx', {
-            schema: {
-                count: { default: 250 },        // jumlah butiran (turunkan kalau HP berat)
-                w: { default: 1.8 },            // lebar area
-                h: { default: 2.2 },            // tinggi area
-                d: { default: 1.6 },            // tinggi jatuh dari kartu
-                size: { default: 0.07 },        // ukuran butiran
-                speed: { default: 0.22 }        // kecepatan jatuh
-            },
             init() {
-                const T = AFRAME.THREE, d = this.data, n = d.count;
-                const pos = new Float32Array(n * 3);
-                this.vel = new Float32Array(n); this.ph = new Float32Array(n);
-                for (let i = 0; i < n; i++) {
-                    pos[i * 3] = (Math.random() - .5) * d.w;
-                    pos[i * 3 + 1] = (Math.random() - .5) * d.h;
-                    pos[i * 3 + 2] = Math.random() * d.d;
-                    this.vel[i] = d.speed * (.5 + Math.random());
-                    this.ph[i] = Math.random() * 6.28;
+                const T = AFRAME.THREE, A = FX.area;
+                const mat = new T.SpriteMaterial({ map: flakeTex(), transparent: true, depthWrite: false });
+                this.group = new T.Group(); this.flakes = [];
+                for (let i = 0; i < FX.snowCount; i++) {
+                    const sp = new T.Sprite(mat), s = FX.flake * (0.6 + Math.random() * 0.8);
+                    sp.scale.set(s, s, 1);
+                    const bx = (Math.random() - .5) * A[0], by = (Math.random() - .5) * A[1];
+                    sp.position.set(bx, by, Math.random() * A[2]);
+                    this.flakes.push({ sp, bx, by, v: FX.speed * (.6 + Math.random() * .8), ph: Math.random() * 6.283, f: .6 + Math.random() * .8 });
+                    this.group.add(sp);
                 }
-                const g = new T.BufferGeometry();
-                g.setAttribute('position', new T.BufferAttribute(pos, 3));
-                const m = new T.PointsMaterial({
-                    size: d.size, map: flakeTex(),
-                    transparent: true, depthWrite: false
-                });
-                this.pts = new T.Points(g, m); this.pts.frustumCulled = false;
-                this.el.setObject3D('snow', this.pts);
+                this.el.setObject3D('snow', this.group);
             },
             tick(t, dt) {
-                if (!this.pts) return;
+                if (!this.flakes) return;
                 dt = Math.min(dt, 50) / 1000;
-                const d = this.data, a = this.pts.geometry.attributes.position, p = a.array;
-                for (let i = 0; i < this.vel.length; i++) {
-                    p[i * 3 + 2] -= this.vel[i] * dt;                                   // jatuh
-                    p[i * 3] += Math.sin(t / 1000 + this.ph[i]) * 0.08 * dt;           // goyang
-                    if (p[i * 3 + 2] < 0) {                                              // ulang dari atas
-                        p[i * 3] = (Math.random() - .5) * d.w;
-                        p[i * 3 + 1] = (Math.random() - .5) * d.h;
-                        p[i * 3 + 2] = d.d;
-                    }
+                const A = FX.area, ts = t / 1000;
+                for (const f of this.flakes) {
+                    const p = f.sp.position, a = ts * f.f + f.ph;
+                    p.z -= f.v * dt;
+                    p.x = f.bx + Math.sin(a) * FX.flutter;
+                    p.y = f.by + Math.sin(a * 2) * FX.flutter * 0.5;
+                    if (p.z < 0) { p.z = A[2]; f.bx = (Math.random() - .5) * A[0]; f.by = (Math.random() - .5) * A[1]; }
                 }
-                a.needsUpdate = true;
             }
         });
 
-        // Cahaya terang berdenyut di belakang/atas karakter
+        // Cahaya lembut berdenyut
         AFRAME.registerComponent('glow-fx', {
-            schema: { size: { default: 2.2 }, color: { default: '#ffe9a8' } },
             init() {
                 const T = AFRAME.THREE;
-                const mat = new T.SpriteMaterial({
+                this.spr = new T.Sprite(new T.SpriteMaterial({
                     map: radialTex([[0, 'rgba(255,255,255,1)'], [.35, 'rgba(255,240,190,.55)'], [1, 'rgba(255,220,150,0)']]),
-                    color: new T.Color(this.data.color), blending: T.AdditiveBlending, transparent: true, depthWrite: false
-                });
-                this.spr = new T.Sprite(mat);
-                this.spr.scale.set(this.data.size, this.data.size, 1);
+                    color: new T.Color('#ffe9a8'), blending: T.AdditiveBlending, transparent: true, depthWrite: false
+                }));
                 this.el.setObject3D('glow', this.spr);
             },
             tick(t) {
                 if (!this.spr) return;
-                const k = Math.sin(t / 450);
-                this.spr.material.opacity = 0.7 + 0.25 * k;                              // berdenyut
-                const s = this.data.size * (1 + 0.06 * k);
+                const k = Math.sin(t / 450), s = FX.glowSize * (1 + 0.06 * k);
+                this.spr.material.opacity = Math.min(1, FX.glowOpacity + 0.2 * k);
                 this.spr.scale.set(s, s, 1);
             }
         });
@@ -203,8 +194,8 @@
 
             const glow = document.createElement('a-entity');
             glow.setAttribute('glow-fx', '');
-            glow.setAttribute('position', '0 0 0.6');   // tinggi cahaya dari kartu
-            glow.setAttribute('light', 'type: point; color: #fff1c2; intensity: 3; decay: 2');  // menerangi model
+            glow.setAttribute('position', '0 0 ' + FX.glowHeight);
+            glow.setAttribute('light', 'type: point; color: #fff1c2; intensity: ' + FX.lightIntensity + '; decay: 2');
             target.appendChild(glow);
         }
     </script>
