@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Print QR</title>
+    <style>
+        :root {
+            --blue: #1a4a9c;
+            --deep: #12336f;
+            --yellow: #ffcb05
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            background: #eef2fb;
+            color: #16264a;
+            -webkit-text-size-adjust: 100%;
+            padding: calc(14px + env(safe-area-inset-top, 0px)) 14px calc(20px + env(safe-area-inset-bottom, 0px))
+        }
+
+        .head {
+            display: flex;
+            gap: 14px;
+            background: #fff;
+            border: 3px solid var(--blue);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 10px
+        }
+
+        .thumb {
+            width: 36%;
+            max-width: 180px;
+            aspect-ratio: 1/1;
+            object-fit: contain;
+            background: #dfe7f8;
+            border-radius: 10px;
+            flex: none
+        }
+
+        .info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px
+        }
+
+        h1 {
+            font-size: clamp(1rem, 7vw, 1.5rem);
+            color: var(--blue);
+            word-break: break-word
+        }
+
+        .fields {
+            display: flex;
+            gap: 8px
+        }
+
+        .fields label {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            font-size: .8rem;
+            gap: 4px;
+            min-width: 0
+        }
+
+        .fields input {
+            width: 100%;
+            min-height: 44px;
+            padding: 8px;
+            border: 2px solid var(--blue);
+            border-radius: 8px;
+            font-size: 16px
+        }
+
+        .btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px
+        }
+
+        .btn {
+            flex: 1;
+            min-height: 46px;
+            padding: 0 6px;
+            font: 600 .8rem system-ui;
+            border-radius: 10px;
+            border: 2px solid var(--blue);
+            background: var(--yellow);
+            color: var(--deep);
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center
+        }
+
+        .btn.alt {
+            background: #fff;
+            color: var(--blue)
+        }
+
+        .meta {
+            font-size: .78rem;
+            color: #5a6b92;
+            margin-bottom: 10px;
+            line-height: 1.4
+        }
+
+        #url {
+            word-break: break-all
+        }
+
+        /* Preview = halaman cetak asli (satuan mm), lalu di-scale agar muat di layar */
+        #stage {
+            overflow: hidden
+        }
+
+        #pages {
+            transform-origin: 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10mm
+        }
+
+        .sheet {
+            box-shadow: 0 2px 10px rgba(18, 51, 111, .25)
+        }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0
+            }
+
+            .no-print {
+                display: none !important
+            }
+
+            #stage {
+                height: auto !important;
+                overflow: visible
+            }
+
+            #pages {
+                transform: none !important;
+                display: block
+            }
+
+            .sheet {
+                box-shadow: none
+            }
+        }
+    </style>
+    <!-- CSS lembar cetak (dipakai bersama oleh preview, iframe print, dan fallback) -->
+    <style id="sheetStyle"></style>
+</head>
+
+<body>
+    <div class="head no-print">
+        <img class="thumb" src="assets/qr.png" alt="">
+        <div class="info">
+            <h1>QR AR</h1>
+            <div>
+                <div class="fields">
+                    <label>Column <input type="number" id="cols" value="3" min="1" max="5" inputmode="numeric"></label>
+                    <label>Row <input type="number" id="rows" value="4" min="1" max="30" inputmode="numeric"></label>
+                </div>
+                <div class="btns">
+                    <a class="btn alt" href="admin.html">◀ Back</a>
+                    <button class="btn alt" id="dl">Download PNG</button>
+                    <button class="btn" id="pr">Print</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="meta no-print">Print size: <b>5 x 5 cm</b> per QR (including 3 mm transparent border). <span
+            id="info"></span><br><span id="url"></span></p>
+    <div id="stage">
+        <div id="pages"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+    <script defer>
+        const SIZE = 50, PAD = 3, MARGIN = 5;   // mm: kotak QR, margin putih dalam kotak, margin halaman
+        const QZ = 4;                            // quiet zone (modul) untuk PNG
+        const ID = 'index';                      // ganti manual per karakter
+        const MM = 96 / 25.4;
+        const $ = id => document.getElementById(id);
+
+        const target = new URL(ID + '.html', location.href).href;
+        $('url').textContent = target;
+
+        // ---- QR: dibuat sekali sebagai vektor SVG, background transparan ----
+        let qr = null, qrUrl = '';
+        function buildQR() {
+            const q = new QRCode(document.createElement('div'), {
+                text: target, width: 64, height: 64, correctLevel: QRCode.CorrectLevel.M
+            });
+            const m = q._oQRCode, n = m.getModuleCount();
+            let d = '';
+            for (let y = 0; y < n; y++) {
+                for (let x = 0; x < n;) {
+                    if (!m.isDark(y, x)) { x++; continue; }
+                    const s = x;
+                    while (x < n && m.isDark(y, x)) x++;
+                    d += 'M' + s + ' ' + y + 'h' + (x - s) + 'v1h-' + (x - s) + 'z';
+                }
+            }
+            const svg = (pad, px) => '<svg xmlns="http://www.w3.org/2000/svg"' +
+                (px ? ' width="' + px + '" height="' + px + '"' : '') +
+                ' viewBox="' + (-pad) + ' ' + (-pad) + ' ' + (n + 2 * pad) + ' ' + (n + 2 * pad) +
+                '" shape-rendering="crispEdges"><path d="' + d + '" fill="#000"/></svg>';
+            qr = { n, svg };
+            qrUrl = URL.createObjectURL(new Blob([svg(0)], { type: 'image/svg+xml' }));
+        }
+
+        // ---- Layout halaman (satu sumber untuk preview & print) ----
+        let page = { W: 210, H: 297, html: '', css: '', land: false };
+
+        function dims() {
+            const c = Math.min(5, Math.max(1, +$('cols').value || 1));
+            const r = Math.min(30, Math.max(1, +$('rows').value || 1));
+            $('cols').value = c; $('rows').value = r;
+            return { c, r };
+        }
+
+        function layout() {
+            const { c, r } = dims();
+            const land = c > 4, W = land ? 297 : 210, H = land ? 210 : 297;
+            const rpp = Math.max(1, Math.floor((H - MARGIN * 2) / SIZE));
+            const cell = '<div class="c"><img src="' + qrUrl + '" alt="QR ' + ID + '"></div>';
+            let html = '', left = r, pages = 0;
+            while (left > 0) {
+                const rows = Math.min(rpp, left);
+                html += '<section class="sheet"><div class="g">' + cell.repeat(rows * c) + '</div></section>';
+                left -= rows; pages++;
+            }
+            const css =
+                '*{margin:0;padding:0;box-sizing:border-box}' +
+                '.sheet{width:' + W + 'mm;height:' + (H - 1) + 'mm;padding:' + MARGIN + 'mm;background:#fff;overflow:hidden;' +
+                '-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+                '.g{display:grid;grid-template-columns:repeat(' + c + ',' + SIZE + 'mm);grid-auto-rows:' + SIZE + 'mm}' +
+                '.c{width:' + SIZE + 'mm;height:' + SIZE + 'mm;padding:' + PAD + 'mm;border:.2mm dashed #999}' +
+                '.c img{width:100%;height:100%;display:block}' +
+                '@media print{.sheet{break-after:page}.sheet:last-child{break-after:auto}}' +
+                '@page{size:A4 ' + (land ? 'landscape' : 'portrait') + ';margin:0}';
+            page = { W, H, html, css, land };
+            return { c, r, pages };
+        }
+
+        function fit() {
+            const p = $('pages'), s = Math.min(1, $('stage').clientWidth / (page.W * MM));
+            p.style.width = page.W + 'mm';
+            p.style.transform = 'scale(' + s + ')';
+            $('stage').style.height = p.offsetHeight * s + 'px';
+        }
+
+        function showQR() {
+            const { c, r, pages } = layout();
+            $('sheetStyle').textContent = page.css;
+            $('pages').innerHTML = page.html;
+            $('info').textContent = c * r + ' QR · ' + pages + ' page' + (pages > 1 ? 's' : '') +
+                ' · A4 ' + (page.land ? 'landscape' : 'portrait') + '.';
+            fit();
+        }
+
+        // ---- Download 1 QR sebagai PNG transparan ----
+        function downloadPNG() {
+            const total = qr.n + 2 * QZ, px = total * Math.ceil(1024 / total);   // kelipatan modul = tajam
+            const img = new Image();
+            img.onload = () => {
+                const cv = document.createElement('canvas');
+                cv.width = cv.height = px;
+                cv.getContext('2d').drawImage(img, 0, 0, px, px);
+                cv.toBlob(b => {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(b);
+                    a.download = 'qr-' + ID + '.png';
+                    document.body.appendChild(a); a.click(); a.remove();
+                    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+                }, 'image/png');
+            };
+            img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(qr.svg(QZ, px));
+        }
+
+        // ---- Print: iframe berisi markup & CSS yang sama persis dengan preview ----
+        function printQR() {
+            const old = $('pf'); if (old) old.remove();
+            const f = document.createElement('iframe');
+            f.id = 'pf';
+            f.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+            document.body.appendChild(f);
+
+            const d = f.contentDocument;
+            d.open();
+            d.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR ' + ID + '</title><style>' +
+                page.css + '</style></head><body>' + page.html + '</body></html>');
+            d.close();
+
+            f.contentWindow.onafterprint = () => setTimeout(() => f.remove(), 500);
+            setTimeout(() => {
+                try { f.contentWindow.focus(); f.contentWindow.print(); }
+                catch (e) { f.remove(); window.print(); }   // fallback: print halaman ini
+            }, 400);
+            setTimeout(() => f.remove(), 180000);
+        }
+
+        // ---- Init ----
+        window.addEventListener('load', () => {
+            buildQR();
+            let t;
+            const upd = () => { clearTimeout(t); t = setTimeout(showQR, 120); };
+            $('cols').addEventListener('input', upd);
+            $('rows').addEventListener('input', upd);
+            $('dl').addEventListener('click', downloadPNG);
+            $('pr').addEventListener('click', printQR);
+            window.addEventListener('resize', fit);
+            showQR();
+        });
+    </script>
+</body>
+
+</html>
