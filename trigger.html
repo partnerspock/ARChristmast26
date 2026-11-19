@@ -82,7 +82,7 @@
              data-scale = UKURAN (kecilkan di sini, mis. 0.8 0.8 0.8)
              data-rot   = rotasi, data-pos = posisi
              data-anim  = loop (gerak terus) | once (main sekali lalu diam di pose akhir) | none (tanpa animasi)
-             data-fx    = off (tanpa partikel) | snow | night | wood  (hanya beda GAMBAR, lihat FX_MODES) -->
+             data-fx    = off (tanpa partikel) | snow | night | wood | light  (hanya beda GAMBAR, lihat FX_MODES) -->
         <a-entity class="tgt" data-name="char1" data-glb="char1/char1.glb" data-rot="20 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="loop" data-fx="light" mindar-image-target="targetIndex: 0"></a-entity>
         <a-entity class="tgt" data-name="char2" data-glb="char2/char2.glb" data-rot="30 0 0" data-pos="0 0 0"
@@ -102,7 +102,7 @@
         <a-entity class="tgt" data-name="char9" data-glb="char9/char9.glb" data-rot="100 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="once" data-fx="wood" mindar-image-target="targetIndex: 8"></a-entity>
         <a-entity class="tgt" data-name="char10" data-glb="char10/char10.glb" data-rot="110 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="once" data-fx="snow" mindar-image-target="targetIndex: 9"></a-entity>
+            data-scale="0.8 0.8 0.8" data-anim="loop" data-fx="snow" mindar-image-target="targetIndex: 9"></a-entity>
     </a-scene>
 
     <script>
@@ -115,6 +115,10 @@
             fast: 20,       // saat kartu digerakkan: BESARKAN = model lebih cepat menyusul
             range: 0.05     // batas "gerakan kecil" dianggap goyangan
         };
+
+        // VERSI ASET: NAIKKAN angka ini (mis. '2', '3') setiap kali kamu push GLB/PNG/lagu baru,
+        // supaya HP tidak memakai file lama dari cache.
+        const ASSET_VER = '1';
 
         // Gambar per mode: HANYA ini yang beda antar mode. Animasi & setting sama semua.
         // Untuk ganti aset, cukup ubah nama file PNG di sini.
@@ -135,12 +139,12 @@
             speedMax: 0.13,         // kecepatan jatuh paling cepat (butiran besar cenderung lebih cepat)
             flutter: 0.03,          // goyangan kiri-kanan (lebar layar)
             spin: 0.9,              // kecepatan berputar (0 = tidak berputar)
-            fade: 0.5,             // bagian atas/bawah layar untuk fade in/out (0-0.5)
+            fade: 0.5,              // bagian atas/bawah layar untuk fade in/out (0-0.5)
             margin: 0.1,            // butiran mulai sedikit di atas layar dan hilang sedikit di bawah layar
             opacityMin: 0.1,        // transparansi terendah
             opacityMax: 1           // transparansi tertinggi
         };
-        const FXLOG = { msg: '' };
+        const FXLOG = { msg: '', anim: '' };
 
         function flakeTex() {
             const c = document.createElement('canvas'); c.width = c.height = 64;
@@ -181,11 +185,44 @@
             }
         });
 
+        // Memainkan animasi dari GLB (dibuat di Blender) langsung lewat THREE.AnimationMixer.
+        // Tidak bergantung pada aframe-extras. Jumlah animasi yang ditemukan tampil di teks kuning (anim: ...).
+        //   mode: loop = berulang terus | once = main sekali lalu berhenti di pose akhir
+        AFRAME.registerComponent('play-anim', {
+            schema: { mode: { default: 'loop' } },
+            init() {
+                this.mixer = null;
+                this.el.addEventListener('model-loaded', e => {
+                    const T = AFRAME.THREE, model = e.detail.model, clips = (model && model.animations) || [];
+                    if (!clips.length) {
+                        FXLOG.anim = 'TIDAK ADA animasi di GLB (cek export Blender)';
+                        if (window.refreshDbg) window.refreshDbg();
+                        return;
+                    }
+                    this.mixer = new T.AnimationMixer(model);
+                    clips.forEach(c => {
+                        const a = this.mixer.clipAction(c);
+                        if (this.data.mode === 'once') { a.setLoop(T.LoopOnce, 1); a.clampWhenFinished = true; }
+                        else a.setLoop(T.LoopRepeat, Infinity);
+                        a.reset().play();
+                    });
+                    FXLOG.anim = clips.length + ' clip (' + clips.map(c => c.name).join(', ') + ') ' + this.data.mode;
+                    if (window.refreshDbg) window.refreshDbg();
+                });
+            },
+            tick(t, dt) {
+                if (this.mixer) this.mixer.update(Math.min(dt, 100) / 1000);
+            },
+            remove() {
+                if (this.mixer) this.mixer.stopAllAction();
+            }
+        });
+
         // Partikel jatuh dari atas ke bawah memakai PNG sendiri
         const texCache = {};
         function loadTex(mode) {
             if (texCache[mode]) return texCache[mode];
-            const url = FX_MODES[mode].img, T = AFRAME.THREE;
+            const url = FX_MODES[mode].img + '?v=' + ASSET_VER, T = AFRAME.THREE;
             return texCache[mode] = new Promise(res => {
                 new T.TextureLoader().load(url, t => {
                     if (T.SRGBColorSpace) t.colorSpace = T.SRGBColorSpace;
@@ -265,7 +302,7 @@
             }
         });
 
-        // Dipasang di holder: partikel sesuai data-fx (snow/night/wood)
+        // Dipasang di holder: partikel sesuai data-fx (snow/night/wood/light)
         function addFx(target, holder) {
             const mode = target.dataset.fx;
             if (FX_MODES[mode]) {
@@ -288,14 +325,15 @@
         const show = () => {
             if (!DEBUG) return;
             dbg.textContent = 'mind: ' + mind + ' | camera: ' + cam + (card ? ' | card: ' + card : '') +
-                (glb ? ' | GLB: ' + glb : '') + ' | song: ' + songMsg + (FXLOG.msg ? ' | ' + FXLOG.msg : '');
+                (glb ? ' | GLB: ' + glb : '') + (FXLOG.anim ? ' | anim: ' + FXLOG.anim : '') +
+                ' | song: ' + songMsg + (FXLOG.msg ? ' | ' + FXLOG.msg : '');
         };
         show();
         window.refreshDbg = show;
 
         // cek file .mind (hanya saat DEBUG): harus ada dan berukuran besar, bukan halaman 404 kecil
         if (DEBUG) {
-            fetch('assets/update.mind').then(r => r.arrayBuffer().then(b => {
+            fetch('assets/update.mind?v=' + ASSET_VER).then(r => r.arrayBuffer().then(b => {
                 mind = !r.ok ? 'NOT FOUND (' + r.status + ') - cek path/nama file .mind'
                     : b.byteLength < 1000 ? 'INVALID (' + b.byteLength + ' byte)'
                         : 'OK (' + Math.round(b.byteLength / 1024) + ' KB)';
@@ -349,7 +387,7 @@
                 ctx = new (window.AudioContext || window.webkitAudioContext)();
                 master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
                 ctx.onstatechange = () => { if (ctx.state === 'running' && wantSong) { songMsg = 'playing'; show(); } };
-                fetch(SONG.src).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+                fetch(SONG.src + '?v=' + ASSET_VER).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
                     .then(ab => new Promise((ok, no) => ctx.decodeAudioData(ab, ok, no)))
                     .then(b => {
                         buf = b; songMsg = 'ready'; show();
@@ -401,13 +439,12 @@
                     addFx(el, holder);
 
                     const m = document.createElement('a-gltf-model');
-                    m.setAttribute('src', el.dataset.glb);
+                    m.setAttribute('src', el.dataset.glb + '?v=' + ASSET_VER);
                     m.setAttribute('rotation', el.dataset.rot);
                     m.setAttribute('position', el.dataset.pos);
                     m.setAttribute('scale', el.dataset.scale);
                     const anim = el.dataset.anim || 'loop';
-                    if (anim === 'loop') m.setAttribute('animation-mixer', '');
-                    else if (anim === 'once') m.setAttribute('animation-mixer', 'loop: once; clampWhenFinished: true');
+                    if (anim !== 'none') m.setAttribute('play-anim', 'mode: ' + anim);
                     m.addEventListener('model-loaded', () => { glb = 'OK'; show(); });
                     m.addEventListener('model-error', () => { glb = 'FAILED (cek path ' + el.dataset.glb + ')'; show(); });
                     glb = 'loading';
