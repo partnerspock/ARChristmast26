@@ -8,8 +8,8 @@
     <title>Print QR</title>
     <style>
         :root {
-            --blue: #1a4a9c;
-            --deep: #12336f;
+            --blue: #9c661a;
+            --deep: #6f4012;
             --yellow: #ffcb05
         }
 
@@ -20,7 +20,7 @@
 
         body {
             font-family: system-ui, sans-serif;
-            background: #eef2fb;
+            background: rgb(253, 241, 223);
             color: #16264a;
             -webkit-text-size-adjust: 100%;
             padding: calc(14px + env(safe-area-inset-top, 0px)) 14px calc(20px + env(safe-area-inset-bottom, 0px))
@@ -114,7 +114,7 @@
 
         .meta {
             font-size: .78rem;
-            color: #5a6b92;
+            color: #927e5a;
             margin-bottom: 10px;
             line-height: 1.4
         }
@@ -172,15 +172,15 @@
     <div class="head no-print">
         <img class="thumb" src="assets/qr.png" alt="">
         <div class="info">
-            <h1>QR AR</h1>
+            <h1>Download QR</h1>
             <div>
                 <div class="fields">
                     <label>Column <input type="number" id="cols" value="3" min="1" max="5" inputmode="numeric"></label>
                     <label>Row <input type="number" id="rows" value="4" min="1" max="30" inputmode="numeric"></label>
                 </div>
                 <div class="btns">
-                    <a class="btn alt" href="admin.html">◀ Back</a>
-                    <button class="btn alt" id="dl">Download PNG</button>
+                    <a class="btn alt" href="admin.html">Home</a>
+                    <button class="btn alt" id="dl">⬇ PNG</button>
                     <button class="btn" id="pr">Print</button>
                 </div>
             </div>
