@@ -7,9 +7,15 @@
     <meta name="robots" content="noindex,nofollow">
     <title>Christmas 2026</title>
 
-    <!-- Hanya 3 script ini. Jangan tambah mindar-image.prod.js atau mindar-image-three.prod.js -->
+    <!-- Percepat koneksi ke CDN, dan mulai unduh file .mind SEKARANG (paralel dengan script & izin kamera).
+         PENTING: href preload harus SAMA PERSIS dengan imageTargetSrc di <a-scene>. -->
+    <link rel="preconnect" href="https://aframe.io">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preload" href="assets/update.mind" as="fetch" crossorigin>
+
+    <!-- Hanya 2 script ini. Jangan tambah mindar-image.prod.js atau mindar-image-three.prod.js.
+         (aframe-extras dihapus: animasi GLB sekarang dimainkan oleh kode sendiri di bawah) -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
@@ -56,6 +62,79 @@
             pointer-events: none;
             padding: 0 16px
         }
+
+        /* ===== Layar bantuan saat kamera ditolak / tidak bisa dibuka ===== */
+        #camfix {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: calc(24px + env(safe-area-inset-top, 0px)) calc(24px + env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) calc(24px + env(safe-area-inset-left, 0px));
+            background: #9a1409;
+            color: #fdf1df;
+            text-align: center;
+            overflow: auto
+        }
+
+        #camfix.on {
+            display: flex
+        }
+
+        #camfix .box {
+            width: 100%;
+            max-width: 420px
+        }
+
+        #camfix h2 {
+            margin: 0 0 10px;
+            font-size: 1.5rem;
+            color: #f2b630
+        }
+
+        #camfix p {
+            margin: 0 0 14px;
+            line-height: 1.5
+        }
+
+        #camfix ol {
+            text-align: left;
+            margin: 0 0 18px;
+            padding-left: 1.3em;
+            line-height: 1.5
+        }
+
+        #camfix li {
+            margin: 6px 0
+        }
+
+        #camfix .b {
+            display: block;
+            width: 100%;
+            margin: 10px 0 0;
+            padding: 14px 18px;
+            border: 0;
+            border-radius: 999px;
+            font: inherit;
+            font-weight: 700;
+            font-size: 1rem;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            background: rgba(255, 255, 255, .18);
+            color: #fdf1df
+        }
+
+        #camfix .b.main {
+            background: #f2b630;
+            color: #9a1409
+        }
+
+        #camfix .b:disabled {
+            opacity: .6;
+            cursor: default
+        }
     </style>
 </head>
 
@@ -64,13 +143,24 @@
     <p id="hint">Opening camera...</p>
     <p id="dbg"></p>
 
+    <div id="camfix" role="alertdialog" aria-labelledby="cf-title">
+        <div class="box">
+            <h2 id="cf-title">We need your camera</h2>
+            <p id="cf-msg"></p>
+            <ol id="cf-steps"></ol>
+            <button class="b main" id="cf-retry">Try again</button>
+            <button class="b" id="cf-copy" style="display:none">Copy link</button>
+            <a class="b" href="index.html">Back</a>
+        </div>
+    </div>
+
     <!--
       SATU file .mind berisi 10 gambar. Urutan upload di compiler = targetIndex:
       char1 -> 0, char2 -> 1, ... char10 -> 9.
       maxTrack: 1 = satu kartu sekali deteksi (lebih ringan). Naikkan kalau mau beberapa kartu sekaligus.
     -->
     <a-scene
-        mindar-image="imageTargetSrc: assets/update.mind; maxTrack: 1; filterMinCF: 0.0005; filterBeta: 50; missTolerance: 10; autoStart: true; uiLoading: yes; uiScanning: no; uiError: yes;"
+        mindar-image="imageTargetSrc: assets/update.mind; maxTrack: 1; filterMinCF: 0.0005; filterBeta: 50; missTolerance: 10; autoStart: true; uiLoading: yes; uiScanning: no; uiError: no;"
         color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
 
@@ -315,13 +405,14 @@
 
     <script>
         // ===== TESTING: true = tampilkan teks kuning di atas layar, false = sembunyikan =====
-        const DEBUG = true;
+        // Untuk user biasa pakai false (lebih ringan). Ubah ke true hanya saat kamu sedang mengecek masalah.
+        const DEBUG = false;
 
         const hint = document.getElementById('hint'), dbg = document.getElementById('dbg'),
             scene = document.querySelector('a-scene');
         dbg.style.display = DEBUG ? '' : 'none';
 
-        let cam = 'loading', card = '', glb = '', mind = 'checking', songMsg = 'loading';
+        let cam = 'loading', card = '', glb = '', mind = 'checking', songMsg = 'menunggu kamera';
         const show = () => {
             if (!DEBUG) return;
             dbg.textContent = 'mind: ' + mind + ' | camera: ' + cam + (card ? ' | card: ' + card : '') +
@@ -331,9 +422,9 @@
         show();
         window.refreshDbg = show;
 
-        // cek file .mind (hanya saat DEBUG): harus ada dan berukuran besar, bukan halaman 404 kecil
+        // cek file .mind (hanya saat DEBUG). Memakai URL yang SAMA dengan MindAR & preload, jadi tidak unduh dua kali.
         if (DEBUG) {
-            fetch('assets/update.mind?v=' + ASSET_VER).then(r => r.arrayBuffer().then(b => {
+            fetch('assets/update.mind').then(r => r.arrayBuffer().then(b => {
                 mind = !r.ok ? 'NOT FOUND (' + r.status + ') - cek path/nama file .mind'
                     : b.byteLength < 1000 ? 'INVALID (' + b.byteLength + ' byte)'
                         : 'OK (' + Math.round(b.byteLength / 1024) + ' KB)';
@@ -383,6 +474,8 @@
         }
 
         function initSong() {
+            if (ctx) return;                       // jangan dobel
+            songMsg = 'loading'; show();
             try {
                 ctx = new (window.AudioContext || window.webkitAudioContext)();
                 master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
@@ -398,7 +491,7 @@
         }
 
         function playSong() {
-            wantSong = true;
+            wantSong = true;                       // kalau lagu belum siap, otomatis main begitu siap (lihat initSong)
             if (!ctx) return;
             if (ctx.state !== 'running') ctx.resume().catch(() => { });
             if (buf) { beginSong(); rampMaster(SONG.volume, SONG.fadeIn); }
@@ -410,18 +503,92 @@
             rampMaster(0, SONG.fadeOut);
         }
 
-        initSong();
         // browser (terutama iPhone) bisa memblokir suara otomatis: sentuhan pertama membukanya tanpa teks apa pun
         ['touchend', 'click'].forEach(ev => document.addEventListener(ev, () => {
             if (ctx && ctx.state !== 'running') ctx.resume().catch(() => { });
         }, { passive: true }));
 
+        // ===== KAMERA DITOLAK / TIDAK BISA DIBUKA =====
+        // Alur: MindAR gagal membuka kamera -> event arError -> tampil layar bantuan (#camfix) berisi
+        // penjelasan + langkah mengizinkan kamera + tombol "Try again" dan "Back".
+        const camfix = document.getElementById('camfix'), cfMsg = document.getElementById('cf-msg'),
+            cfSteps = document.getElementById('cf-steps'), cfRetry = document.getElementById('cf-retry'),
+            cfCopy = document.getElementById('cf-copy');
+        const UA = navigator.userAgent;
+        const IS_IOS = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const IS_ANDROID = /Android/i.test(UA);
+        const IN_APP = /FBAN|FBAV|Instagram|Line\/|MicroMessenger|WhatsApp|TikTok|Snapchat|Twitter|Telegram/i.test(UA);
+
+        // Teks yang tampil ke user (bahasa Inggris, sama seperti halaman lain). Ubah di sini kalau mau.
+        const CAMFIX_TEXT = {
+            denied: 'Camera access is blocked. This experience needs your camera to scan the card.',
+            inapp: 'This browser can’t open the camera. Please open this page in Safari or Chrome.',
+            nocamera: 'No camera was found on this device.',
+            busy: 'The camera is being used by another app. Close it, then try again.',
+            insecure: 'The camera needs a secure (https) connection.'
+        };
+        const CAMFIX_STEPS = {
+            ios: ['Tap the “aA” icon in the address bar.', 'Choose Website Settings and set Camera to Allow.', 'Come back here and tap Try again.'],
+            android: ['Tap the lock icon next to the address bar.', 'Open Permissions and set Camera to Allow.', 'Come back here and tap Try again.'],
+            other: ['Click the camera or lock icon in the address bar.', 'Allow camera access for this site.', 'Then click Try again.'],
+            inapp: ['Tap the ⋯ or share menu.', 'Choose “Open in Browser” (Safari or Chrome).']
+        };
+
+        function showCamFix(kind) {
+            if (IN_APP) kind = 'inapp';
+            cfMsg.textContent = CAMFIX_TEXT[kind] || CAMFIX_TEXT.denied;
+            let steps = [];
+            if (kind === 'denied') steps = IS_IOS ? CAMFIX_STEPS.ios : IS_ANDROID ? CAMFIX_STEPS.android : CAMFIX_STEPS.other;
+            else if (kind === 'inapp') steps = CAMFIX_STEPS.inapp;
+            cfSteps.innerHTML = '';
+            steps.forEach(t => { const li = document.createElement('li'); li.textContent = t; cfSteps.appendChild(li); });
+            cfSteps.style.display = steps.length ? '' : 'none';
+            cfCopy.style.display = kind === 'inapp' ? '' : 'none';
+            cfRetry.style.display = (kind === 'inapp' || kind === 'insecure') ? 'none' : '';
+            cfRetry.disabled = false;
+            camfix.classList.add('on');
+        }
+
+        // Cari tahu penyebabnya tanpa memunculkan permintaan izin baru
+        async function detectKind() {
+            if (!window.isSecureContext) return 'insecure';
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return 'inapp';
+            try {
+                const st = await navigator.permissions.query({ name: 'camera' });
+                // kalau user mengubah izin lewat pengaturan, otomatis muat ulang
+                st.onchange = () => { if (st.state === 'granted') location.reload(); };
+            } catch (e) { /* Safari lama: Permissions API untuk kamera tidak ada */ }
+            return 'denied';       // paling sering; kalau ternyata bukan, "Try again" menampilkan penyebab sebenarnya
+        }
+
+        cfRetry.addEventListener('click', async () => {
+            if (IS_IOS) { location.reload(); return; }          // iOS: muat ulang = minta izin lagi
+            cfRetry.disabled = true;
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({ video: true });
+                s.getTracks().forEach(t => t.stop());
+                location.reload();                              // izin sudah ada -> mulai ulang AR
+            } catch (e) {
+                const n = e && e.name;
+                showCamFix(n === 'NotFoundError' || n === 'OverconstrainedError' ? 'nocamera'
+                    : n === 'NotReadableError' || n === 'AbortError' || n === 'TrackStartError' ? 'busy' : 'denied');
+            }
+        });
+
+        cfCopy.addEventListener('click', () => {
+            const done = () => { cfCopy.textContent = 'Link copied'; };
+            if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(done).catch(() => { });
+        });
+
         // ===== KAMERA & KARTU =====
-        scene.addEventListener('arReady', () => { cam = 'OK'; hint.textContent = 'Point the camera at a card'; show(); });
-        scene.addEventListener('arError', () => {
-            cam = 'ERROR';
-            hint.textContent = 'Camera failed to open. Open in Safari/Chrome and allow camera access.';
-            hint.classList.remove('off'); show();
+        // URUTAN MEMUAT: (1) script + kamera + .mind dulu, (2) BARU setelah kamera siap, lagu dimuat di latar belakang.
+        scene.addEventListener('arReady', () => {
+            cam = 'OK'; hint.textContent = 'Point the camera at a card'; show();
+            setTimeout(initSong, 800);             // beri jeda singkat supaya pelacakan kartu stabil dulu
+        });
+        scene.addEventListener('arError', async () => {
+            cam = 'ERROR'; hint.classList.add('off'); show();
+            showCamFix(await detectKind());
         });
 
         // Model + efek dibuat sekali saat kartunya pertama kali terdeteksi, di dalam holder yang mengikuti kartu dengan halus

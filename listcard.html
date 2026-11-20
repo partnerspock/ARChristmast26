@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Christmas 2026 - Cards</title>
+
+    <style>
+        /* ===== UBAH WARNA DI SINI ===== */
+        :root {
+            --bg: #0f3d2e;
+            /* warna background halaman */
+            --text: #3d3d3d;
+            /* warna teks (counter) */
+            --btn-bg: rgba(255, 255, 255, .9);
+            /* warna tombol biasa */
+            --btn-text: #a18400;
+            /* warna teks tombol */
+            --btn-main-bg: #a18400;
+            /* warna tombol utama (Download PNG) */
+            --btn-main-text: #ffffff;
+            /* warna teks tombol utama */
+            --arrow-bg: rgba(0, 0, 0, .35);
+            /* warna lingkaran panah */
+            --arrow-icon: #ffffff;
+            /* warna ikon panah */
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent
+        }
+
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            background: rgb(253, 241, 223);
+            color: var(--text);
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow: hidden
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            padding-top: env(safe-area-inset-top, 0px)
+        }
+
+        #count {
+            text-align: center;
+            font-size: .9rem;
+            letter-spacing: .08em;
+            opacity: .8;
+            padding: 14px 0 0
+        }
+
+        /* area galeri */
+        #stage {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: grab
+        }
+
+        #stage.drag {
+            cursor: grabbing
+        }
+
+        #track {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transform: translate3d(-100%, 0, 0);
+            will-change: transform
+        }
+
+        .slide {
+            flex: 0 0 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px clamp(54px, 9vw, 110px);
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
+
+        /* panah kiri / kanan */
+        .arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 46px;
+            height: 46px;
+            border: 0;
+            border-radius: 50%;
+            background: var(--arrow-bg);
+            color: var(--arrow-icon);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            z-index: 2;
+            transition: transform .15s, opacity .15s
+        }
+
+        .arrow:active {
+            transform: translateY(-50%) scale(.92)
+        }
+
+        .arrow svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round
+        }
+
+        .arrow.left {
+            left: max(8px, env(safe-area-inset-left, 0px))
+        }
+
+        .arrow.right {
+            right: max(8px, env(safe-area-inset-right, 0px))
+        }
+
+        #bar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+            flex-wrap: wrap
+        }
+
+        .btn {
+            appearance: none;
+            border: 0;
+            border-radius: 999px;
+            padding: 13px 22px;
+            font: inherit;
+            font-weight: 600;
+            font-size: .95rem;
+            text-decoration: none;
+            cursor: pointer;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            transition: transform .15s, opacity .15s
+        }
+
+        .btn:active {
+            transform: scale(.96)
+        }
+
+        .btn.main {
+            background: var(--btn-main-bg);
+            color: var(--btn-main-text)
+        }
+
+        .btn:disabled {
+            opacity: .6;
+            cursor: default
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="count"></div>
+    <main id="stage">
+        <div id="track">
+            <div class="slide"><img alt="" draggable="false"></div>
+            <div class="slide"><img alt="" draggable="false"></div>
+            <div class="slide"><img alt="" draggable="false"></div>
+        </div>
+        <button class="arrow left" id="prev" aria-label="Sebelumnya">
+            <svg viewBox="0 0 24 24">
+                <path d="M15 5l-7 7 7 7" />
+            </svg>
+        </button>
+        <button class="arrow right" id="next" aria-label="Berikutnya">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+    </main>
+
+    <nav id="bar">
+        <a class="btn main" href="admin.html">𖠿</a>
+        <button class="btn" id="png">⬇ PNG</button>
+        <button class="btn" id="zip">⬇ ZIP</button>
+        <a class="btn main" href="index.html">Live</a>
+    </nav>
+    <nav id="bar">
+
+    </nav>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        // ===== DAFTAR KARTU: sesuaikan nama file di folder assets/mindcard =====
+        // Urutan di sini = urutan tampil. Tambah/hapus/ganti nama (dan ekstensi, mis. .jpg) sesuai file kamu.
+        const DIR = 'assets/mind-card/';
+        const CARDS = [
+            '1-1.png', '1-2.png', '1-3.png', '2-1.png', '2-2.png',
+            '2-3.png', '3-1.png', '3-2.png', '3-3.png', '4-1.png'
+        ];
+        const ZIP_NAME = 'christmas-2026-cards.zip';
+
+        // Naikkan angka ini kalau kamu mengganti gambar dengan nama file yang sama (hindari cache HP)
+        const ASSET_VER = '1';
+
+        const $ = s => document.querySelector(s);
+        const stage = $('#stage'), track = $('#track'), count = $('#count');
+        const n = CARDS.length;
+        const url = i => DIR + CARDS[((i % n) + n) % n] + '?v=' + ASSET_VER;
+        const baseName = i => CARDS[((i % n) + n) % n].replace(/\.[^.]+$/, '');
+
+        let index = 0, busy = false, dragging = false, startX = 0, dx = 0;
+        const DUR = 350;
+
+        function setX(px, anim) {
+            track.style.transition = anim ? 'transform ' + DUR + 'ms cubic-bezier(.2,.8,.2,1)' : 'none';
+            track.style.transform = 'translate3d(calc(-100% + ' + px + 'px),0,0)';
+        }
+
+        function imgOf(slide) { return slide.querySelector('img'); }
+
+        function updateCount() { count.textContent = (index + 1) + ' / ' + n; }
+
+        function init() {
+            const s = track.children;
+            imgOf(s[0]).src = url(index - 1);
+            imgOf(s[1]).src = url(index);
+            imgOf(s[2]).src = url(index + 1);
+            imgOf(s[1]).alt = baseName(index);
+            updateCount();
+            if (n <= 1) { $('#prev').style.display = $('#next').style.display = 'none'; }
+        }
+
+        // dir = +1 (berikutnya) atau -1 (sebelumnya); berputar tanpa ujung
+        function go(dir) {
+            if (busy || n <= 1) return;
+            busy = true;
+            const w = stage.clientWidth;
+            setX(-dir * w, true);
+            setTimeout(() => {
+                index = ((index + dir) % n + n) % n;
+                if (dir > 0) {
+                    track.appendChild(track.firstElementChild);
+                    imgOf(track.lastElementChild).src = url(index + 1);
+                } else {
+                    track.insertBefore(track.lastElementChild, track.firstElementChild);
+                    imgOf(track.firstElementChild).src = url(index - 1);
+                }
+                imgOf(track.children[1]).alt = baseName(index);
+                setX(0, false);
+                updateCount();
+                busy = false;
+            }, DUR + 30);
+        }
+
+        // panah & keyboard
+        $('#prev').addEventListener('click', () => go(-1));
+        $('#next').addEventListener('click', () => go(1));
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') go(-1);
+            else if (e.key === 'ArrowRight') go(1);
+        });
+
+        // swipe / drag
+        stage.addEventListener('pointerdown', e => {
+            if (busy || n <= 1 || e.target.closest('.arrow')) return;
+            dragging = true; startX = e.clientX; dx = 0;
+            stage.classList.add('drag');
+            stage.setPointerCapture(e.pointerId);
+        });
+        stage.addEventListener('pointermove', e => {
+            if (!dragging) return;
+            dx = e.clientX - startX;
+            setX(dx, false);
+        });
+        function endDrag() {
+            if (!dragging) return;
+            dragging = false;
+            stage.classList.remove('drag');
+            const limit = Math.min(80, stage.clientWidth * 0.15);
+            if (Math.abs(dx) > limit) {
+                // lanjutkan dari posisi geser sekarang
+                go(dx < 0 ? 1 : -1);
+            } else {
+                setX(0, true);
+            }
+            dx = 0;
+        }
+        stage.addEventListener('pointerup', endDrag);
+        stage.addEventListener('pointercancel', endDrag);
+
+        // ===== DOWNLOAD =====
+        function save(blob, name) {
+            const a = document.createElement('a');
+            const href = URL.createObjectURL(blob);
+            a.href = href; a.download = name;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(href), 5000);
+        }
+
+        function toPngBlob(src) {
+            return new Promise((ok, no) => {
+                const im = new Image();
+                im.onload = () => {
+                    const c = document.createElement('canvas');
+                    c.width = im.naturalWidth; c.height = im.naturalHeight;
+                    c.getContext('2d').drawImage(im, 0, 0);
+                    c.toBlob(b => b ? ok(b) : no(new Error('toBlob gagal')), 'image/png');
+                };
+                im.onerror = () => no(new Error('gambar gagal dimuat'));
+                im.src = src;
+            });
+        }
+
+        function withBusy(btn, label, fn) {
+            const old = btn.textContent;
+            btn.disabled = true; btn.textContent = label;
+            return fn().catch(err => { console.error(err); alert('Gagal: ' + err.message); })
+                .finally(() => { btn.disabled = false; btn.textContent = old; });
+        }
+
+        // Download PNG: kartu yang sedang tampil
+        $('#png').addEventListener('click', e => withBusy(e.currentTarget, 'Memproses...', async () => {
+            const file = CARDS[index];
+            let blob;
+            if (/\.png$/i.test(file)) {                      // sudah PNG: ambil file aslinya apa adanya
+                const r = await fetch(url(index));
+                if (!r.ok) throw new Error('file tidak ditemukan: ' + file);
+                blob = await r.blob();
+            } else {                                         // format lain: ubah ke PNG
+                blob = await toPngBlob(url(index));
+            }
+            save(blob, baseName(index) + '.png');
+        }));
+
+        // Download ZIP: semua kartu
+        $('#zip').addEventListener('click', e => withBusy(e.currentTarget, 'Membuat ZIP...', async () => {
+            if (!window.JSZip) throw new Error('JSZip gagal dimuat (cek koneksi internet)');
+            const zip = new JSZip();
+            for (let i = 0; i < n; i++) {
+                const r = await fetch(url(i));
+                if (!r.ok) throw new Error('file tidak ditemukan: ' + CARDS[i]);
+                zip.file(CARDS[i], await r.blob());
+            }
+            save(await zip.generateAsync({ type: 'blob' }), ZIP_NAME);
+        }));
+
+        init();
+    </script>
+</body>
+
+</html>
