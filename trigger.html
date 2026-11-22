@@ -173,26 +173,26 @@
              data-rot   = rotasi, data-pos = posisi
              data-anim  = loop (gerak terus) | once (main sekali lalu diam di pose akhir) | none (tanpa animasi)
              data-fx    = off (tanpa partikel) | snow | night | wood | light  (hanya beda GAMBAR, lihat FX_MODES) -->
-        <a-entity class="tgt" data-name="char1" data-glb="char1/char1.glb" data-rot="20 0 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char1" data-glb="char1/char1.glb" data-rot="90 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="loop" data-fx="light" mindar-image-target="targetIndex: 0"></a-entity>
-        <a-entity class="tgt" data-name="char2" data-glb="char2/char2.glb" data-rot="30 0 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char2" data-glb="char2/char2.glb" data-rot="90 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="loop" data-fx="light" mindar-image-target="targetIndex: 1"></a-entity>
-        <a-entity class="tgt" data-name="char3" data-glb="char3/char3.glb" data-rot="40 0 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char3" data-glb="char3/char3.glb" data-rot="90 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="loop" data-fx="light" mindar-image-target="targetIndex: 2"></a-entity>
-        <a-entity class="tgt" data-name="char4" data-glb="char4/char4.glb" data-rot="50 0 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char4" data-glb="char4/char4.glb" data-rot="90 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="loop" data-fx="night" mindar-image-target="targetIndex: 3"></a-entity>
-        <a-entity class="tgt" data-name="char5" data-glb="char5/char5.glb" data-rot="60 0 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char5" data-glb="char5/char5.glb" data-rot="90 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="once" data-fx="night" mindar-image-target="targetIndex: 4"></a-entity>
-        <a-entity class="tgt" data-name="char6" data-glb="char6/char6.glb" data-rot="70 0 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char6" data-glb="char6/char6.glb" data-rot="90 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="once" data-fx="night" mindar-image-target="targetIndex: 5"></a-entity>
-        <a-entity class="tgt" data-name="char7" data-glb="char7/char7.glb" data-rot="80 0 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char7" data-glb="char7/char7.glb" data-rot="90 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="once" data-fx="wood" mindar-image-target="targetIndex: 6"></a-entity>
         <a-entity class="tgt" data-name="char8" data-glb="char8/char8.glb" data-rot="90 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="once" data-fx="wood" mindar-image-target="targetIndex: 7"></a-entity>
-        <a-entity class="tgt" data-name="char9" data-glb="char9/char9.glb" data-rot="100 0 0" data-pos="0 0 0"
+        <a-entity class="tgt" data-name="char9" data-glb="char9/char9.glb" data-rot="90 0 0" data-pos="0 0 0"
             data-scale="0.8 0.8 0.8" data-anim="once" data-fx="wood" mindar-image-target="targetIndex: 8"></a-entity>
-        <a-entity class="tgt" data-name="char10" data-glb="char10/char10.glb" data-rot="110 0 0" data-pos="0 0 0"
-            data-scale="0.8 0.8 0.8" data-anim="loop" data-fx="snow" mindar-image-target="targetIndex: 9"></a-entity>
+        <a-entity class="tgt" data-name="char10" data-glb="char10/char10.glb" data-rot="0 0 0" data-pos="0 0 0"
+            data-scale="1.8 1.8 1.8" data-anim="loop" data-fx="snow" mindar-image-target="targetIndex: 9"></a-entity>
     </a-scene>
 
     <script>
@@ -285,7 +285,7 @@
                 this.el.addEventListener('model-loaded', e => {
                     const T = AFRAME.THREE, model = e.detail.model, clips = (model && model.animations) || [];
                     if (!clips.length) {
-                        FXLOG.anim = 'TIDAK ADA animasi di GLB (cek export Blender)';
+                        FXLOG.anim = 'Ther is no animation GLB';
                         if (window.refreshDbg) window.refreshDbg();
                         return;
                     }
@@ -412,7 +412,7 @@
             scene = document.querySelector('a-scene');
         dbg.style.display = DEBUG ? '' : 'none';
 
-        let cam = 'loading', card = '', glb = '', mind = 'checking', songMsg = 'menunggu kamera';
+        let cam = 'loading', card = '', glb = '', mind = 'checking', songMsg = 'wait for the camera';
         const show = () => {
             if (!DEBUG) return;
             dbg.textContent = 'mind: ' + mind + ' | camera: ' + cam + (card ? ' | card: ' + card : '') +
@@ -429,7 +429,7 @@
                     : b.byteLength < 1000 ? 'INVALID (' + b.byteLength + ' byte)'
                         : 'OK (' + Math.round(b.byteLength / 1024) + ' KB)';
                 show();
-            })).catch(() => { mind = 'GAGAL diambil'; show(); });
+            })).catch(() => { mind = 'Failed to fetch'; show(); });
         }
 
         // ===== LAGU: 1 lagu, autoplay saat kartu spawn, fade in/out, loop crossfade =====
@@ -483,11 +483,11 @@
                 fetch(SONG.src + '?v=' + ASSET_VER).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
                     .then(ab => new Promise((ok, no) => ctx.decodeAudioData(ab, ok, no)))
                     .then(b => {
-                        buf = b; songMsg = 'ready'; show();
+                        buf = b; songMsg = 'OK'; show();
                         if (wantSong) { beginSong(); rampMaster(SONG.volume, SONG.fadeIn); }
                     })
                     .catch(() => { songMsg = 'FAILED (cek ' + SONG.src + ')'; show(); });
-            } catch (e) { songMsg = 'tidak didukung'; show(); }
+            } catch (e) { songMsg = 'Not supported'; show(); }
         }
 
         function playSong() {
@@ -495,7 +495,7 @@
             if (!ctx) return;
             if (ctx.state !== 'running') ctx.resume().catch(() => { });
             if (buf) { beginSong(); rampMaster(SONG.volume, SONG.fadeIn); }
-            songMsg = ctx.state === 'running' ? 'playing' : 'menunggu sentuhan layar'; show();
+            songMsg = ctx.state === 'running' ? 'playing' : 'Touch the screen'; show();
         }
 
         function stopSong() {       // fade out, lagu tetap berjalan diam-diam supaya terasa tak terputus
@@ -583,7 +583,7 @@
         // ===== KAMERA & KARTU =====
         // URUTAN MEMUAT: (1) script + kamera + .mind dulu, (2) BARU setelah kamera siap, lagu dimuat di latar belakang.
         scene.addEventListener('arReady', () => {
-            cam = 'OK'; hint.textContent = 'Point the camera at a card'; show();
+            cam = 'OK'; hint.textContent = 'Point the camera at a card or box'; show();
             setTimeout(initSong, 800);             // beri jeda singkat supaya pelacakan kartu stabil dulu
         });
         scene.addEventListener('arError', async () => {
